@@ -1,0 +1,147 @@
+function gelLastXls(Path)
+  Set fso = CreateObject("Scripting.FileSystemObject")
+  
+ MaxFileDateFl = 1
+  ' MaxFileDate
+ fileName = "" 
+  
+ For Each oFile In fso.GetFolder(Path).Files
+
+  fName = oFile.Name
+    
+  if (mid(fname, len(fName)-3, 4) = ".xls") then
+    
+    if (mid(fname, 1, 8) = "Template") then
+  
+      if MaxFileDateFl = 1 then
+        MaxFileDate = oFile.DateLastModified
+        MaxFileDateFl = 0
+        fileName = oFile.Name
+      else
+        if oFile.DateLastModified>MaxFileDate then
+          MaxFileDate = oFile.DateLastModified
+          fileName = oFile.Name
+        end if  
+      end if
+    
+    end if
+    
+  end if
+
+ Next
+ 
+  gelLastXls = fileName
+end function
+
+
+Sub FormMacro_XLSTEST2(TCSActiveModule)  
+
+  Path = "C:\Program Files (x86)\CSoft\TechnologiCS\TEMP\"
+  xls2pdfPatch = "c:\temp\xls2pdf.exe"
+  XLSFileName = gelLastXls(Path)
+   
+  PDFFileName = Replace(XLSFileName,".xlsx",".pdf")  
+  PDFFileName = Replace(XLSFileName,".xls",".pdf")  
+  
+  NMK_ID = -1
+  VER_ID = -1
+  Set CurrentVersion = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+  If  Not CurrentVersion Is Nothing Then
+  	NMK_ID = CurrentVersion.Properties("NMK_ID").AsInteger 
+  	VER_ID = CurrentVersion.Properties("ID").AsInteger 
+  End If
+  Set CurrentVersion = Nothing 
+  
+  'MsgBox "NMK_ID=" +cstr(NMK_ID)
+  'MsgBox "VER_ID=" +cstr(VER_ID)
+  'MsgBox "XLSFileName=" +cstr(XLSFileName)
+  'MsgBox "PDFFileName=" +cstr(PDFFileName)
+  
+  result = -1
+  
+  'поиск номенклатуры
+  Set ISingleNmk = TCSApp.SingleNmkFromId(NMK_ID)
+  If Not ISingleNmk Is Nothing Then 
+    ISingleNmk.UserModuleName = ISingleNmk.UniqueUserModuleName
+
+    'документы номенклатуры
+    Set NomenclatureDocuments = ISingleNmk.Properties("NomenclatureDocuments").AsIDispatch
+    If  Not NomenclatureDocuments Is Nothing Then 
+      
+      Call NomenclatureDocuments.First
+      searched = false
+      Do While Not NomenclatureDocuments.Eof
+          'если документ "Комплект ТД" смотрим его атрибут
+          if ((NomenclatureDocuments.Properties("TYPE_NOTE").AsString="Комплект ТД")or(NomenclatureDocuments.Properties("TYPE_NOTE").AsString="Спецификация")) then
+            'перебираем версии
+            Set VERSIONS = NomenclatureDocuments.Properties("VERSIONS").AsIDispatch
+            If  Not VERSIONS Is Nothing Then 
+              Call VERSIONS.First
+
+              Do While Not VERSIONS.Eof
+                'у версий перебираем атрибуты
+                Set VERPARAMS = VERSIONS.Properties("VERPARAMS").AsIDispatch
+                If  Not VERPARAMS Is Nothing Then
+                  Call VERPARAMS.First
+                  
+                  Do While Not VERPARAMS.Eof
+                  
+                    if (VERPARAMS.Properties("GUID").AsString="NMK_VERID") then
+                      VER_ID_IN_DOC = VERPARAMS.Properties("VALUE").AsInteger                    
+                      'если ИД версии в атрибуте равна версии ТП, то это нужный нам документ
+                      if (VER_ID_IN_DOC=VER_ID) then
+                        'MsgBox "Документ найден "+Cstr(VER_ID_IN_DOC)
+                        'прикрепляем документ
+                        
+                        Set df = VERSIONS.Properties("FILES").AsIDispatch
+                        
+                        Set filesys = CreateObject("Scripting.FileSystemObject")
+                        On Error Resume Next 
+                        filesys.DeleteFile Path + PDFFileName
+                        Set filesys = Nothing
+                        
+                        Set ShellAPI = CreateObject("WScript.Shell")
+                        On Error Resume Next
+                        vbHide
+                        ShellAPI.Run xls2pdfPatch+" """ + Path + XLSFileName + """ """ + Path + PDFFileName+"""", 1, true 
+                        Set ShellAPI = Nothing
+                                            
+                        Call df.AddFileEx(Path + PDFFileName, 1)
+                        
+                        'MsgBox "Добавление "+Cstr(Path + PDFFileName)
+                        
+                        'Call df.AddFileEx("C:\Program Files (x86)\CSoft\TechnologiCS\TEMP\Template_29102014 142601.pdf", 1)
+                        
+                        searched = true
+                        MsgBox "OK"                    
+                      end if
+
+                    end if
+                  
+                    Call VERPARAMS.Next
+                  loop                     
+                End If
+                Set VERPARAMS = Nothing
+              
+                Call VERSIONS.Next  
+              Loop  
+
+              Set VERSIONS = Nothing
+            end if   
+
+          end if
+          
+          Call NomenclatureDocuments.Next
+      Loop
+      IF (searched = false) then
+        MsgBox "Документ с параметром 'Связанная версия номенклатуры'"+ vbCrLf + "равным NMK_VERID="+cstr(VER_ID)+" не найден!"
+      end if  
+    else
+      MsgBox "У номенклатуры нет связанных документов"
+    End If 'NomenclatureDocuments 
+    Set NomenclatureDocuments = Nothing  
+      
+    Call TCSapp.DeleteModuleByUserModuleName( ISingleNmk.UserModuleName )
+  End if
+    
+End Sub
