@@ -1,1 +1,1 @@
-Наработки по TechnologiCS
+РќР°СЂР°Р±РѕС‚РєРё РїРѕ TechnologiCS
