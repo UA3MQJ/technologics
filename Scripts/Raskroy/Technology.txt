@@ -1,0 +1,898 @@
+'========================================================================================================================
+'----------------- Расчет нормы листового материала -----------------
+'========================================================================================================================
+Sub FormMacro_Raschet_List_Mat(TCSActiveModule) 'Расчет нормы листового материала
+ 
+    LogObject.ScriptTimeOut = 0
+   'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал листовой и определяем параметры материала
+   List = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_CODE = ParNMK.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "PROFIL" and PAR_VALUE = "Лист" Then
+           List = True 
+         End If
+         If PAR_CODE = "LLIST" Then
+           frm_Raschet_List_Mat.LLIST = PAR_VALUE 
+         End If
+         If PAR_CODE = "WLIST" Then
+           frm_Raschet_List_Mat.WLIST = PAR_VALUE 
+         End If
+         If PAR_CODE = "SIG_V_M" Then
+           frm_Raschet_List_Mat.MassaPogMetra = PAR_VALUE 
+         End If
+         If PAR_CODE = "RAZM" Then 'это размер листа
+           frm_Raschet_List_Mat.RAZM = PAR_VALUE 
+         End If
+         
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   'Проверяем наличие параметров у позиции ТП
+   Set ParPozTP = TCSActiveModule.Properties("Parameters").AsIDispatch
+     If  Not ParPozTP Is Nothing Then
+       ParPozTP.First
+       Do While not ParPozTP.Eof 
+         PAR_CODE = ParPozTP.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParPozTP.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "TP_MD" Then
+           frm_Raschet_List_Mat.MassaDet = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_SZ" Then
+           frm_Raschet_List_Mat.TCS_MZ_SZ = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_VZ" Then
+           frm_Raschet_List_Mat.TCS_MZ_VZ = PAR_VALUE 
+         End If
+         'If PAR_CODE = "TCS_MZ_RZ" Then
+         '  frm_Raschet_List_Mat.RAZM = PAR_VALUE 
+         'End If
+       
+       ParPozTP.Next
+       Loop
+     End If
+   Set ParPozTP = Nothing
+   
+   'Считываем реквизит "Количество деталей из заготовки"
+   Set Recviz = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+     If  Not Recviz Is Nothing Then 
+       frm_Raschet_List_Mat.KDZ = Recviz.Properties( "NumberOfPartsFromOneWorkpiece" ).DisplayText
+     End If
+   Set Recviz = Nothing
+   
+   If List = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является листовым...")
+     Exit Sub
+   End If
+
+   If frm_Raschet_List_Mat.LLIST = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует длина листа...")
+     Exit Sub
+   End If
+
+   If frm_Raschet_List_Mat.WLIST = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует ширина листа...")
+     Exit Sub
+   End If
+   
+   If frm_Raschet_List_Mat.MassaPogMetra = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует масса погонного метра...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_List_Mat.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_List_Mat", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 240
+       F.Width = 300 
+   
+   frm_Raschet_List_Mat.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_List_Mat.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_List_Mat.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_List_Mat.RaschetOf = True Then
+   
+   Call TCSApp.ShowMessageBox("Результат:", "Норма расхода = " + CStr(frm_Raschet_List_Mat.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_List_Mat.KIM) + ";" + CHR(13) + _
+                                              "КДЗ = " + CStr(frm_Raschet_List_Mat.KDZ) + ";" + CHR(13) + _
+                                              "КД = " + CStr(frm_Raschet_List_Mat.KD) + ";" + CHR(13) + _
+                                              "Масса заготовки = " + CStr(frm_Raschet_List_Mat.MassaZag) + ";" + CHR(13) + _
+                                              "Размеры заготовки = " + CStr(frm_Raschet_List_Mat.RazmZag) + ";" )
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+           RecvizM.Properties("DimensionsUnmachined").Value = CStr(frm_Raschet_List_Mat.RazmZag)
+           RecvizM.Properties("MeasurimentUnit_ID").Value = 1
+           RecvizM.Properties("NumberOfPartsFromOneWorkpiece").Value = CStr(frm_Raschet_List_Mat.KDZ)
+           RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_List_Mat.NRash)
+           RecvizM.Properties("UnitForRateSetting").Value = 1
+           RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_List_Mat.MassaZag)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   
+     'Записываем параметры позиции ТП
+     ParValue = CStr(frm_Raschet_List_Mat.KIM) 
+     Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+       i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+     Set Par = Nothing
+                                                                       
+     
+   
+   End If
+   
+ If F.ModalResult<>2 Then Exit Sub  
+   
+End Sub
+
+'========================================================================================================================
+'----------------- Расчет нормы листового материала2 -----------------
+'========================================================================================================================
+Sub FormMacro_Raschet_List_Mat2(TCSActiveModule) 'Расчет нормы листового материала
+ 
+    LogObject.ScriptTimeOut = 0
+   'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал листовой и определяем параметры материала
+   List = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_CODE = ParNMK.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "PROFIL" and PAR_VALUE = "Лист" Then
+           List = True 
+         End If
+         If PAR_CODE = "LLIST" Then
+           frm_Raschet_List_Mat2.LLIST = PAR_VALUE 
+         End If
+         If PAR_CODE = "WLIST" Then
+           frm_Raschet_List_Mat2.WLIST = PAR_VALUE 
+         End If
+         If PAR_CODE = "SIG_V_M" Then
+           frm_Raschet_List_Mat2.MassaPogMetra = PAR_VALUE 
+         End If
+         If PAR_CODE = "RAZM" Then 'это размер листа
+           frm_Raschet_List_Mat2.RAZM = PAR_VALUE 
+         End If
+         
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   'Проверяем наличие параметров у позиции ТП
+   Set ParPozTP = TCSActiveModule.Properties("Parameters").AsIDispatch
+   ParPozTP.refresh
+     If  Not ParPozTP Is Nothing Then
+       ParPozTP.First
+       Do While not ParPozTP.Eof 
+         PAR_CODE = ParPozTP.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParPozTP.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "TP_MD" Then
+           frm_Raschet_List_Mat2.MassaDet = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_SZ" Then
+           frm_Raschet_List_Mat2.TCS_MZ_SZ = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_VZ" Then
+           frm_Raschet_List_Mat2.TCS_MZ_VZ = PAR_VALUE 
+         End If
+         'If PAR_CODE = "TCS_MZ_RZ" Then
+         '  frm_Raschet_List_Mat.RAZM = PAR_VALUE 
+         'End If
+       
+       ParPozTP.Next
+       Loop
+     End If
+   Set ParPozTP = Nothing
+   
+   'Считываем реквизит "Количество деталей из заготовки"
+   Set Recviz = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+     If  Not Recviz Is Nothing Then 
+       frm_Raschet_List_Mat2.KDZ = Recviz.Properties( "NumberOfPartsFromOneWorkpiece" ).DisplayText
+     End If
+   Set Recviz = Nothing
+   
+   If List = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является листовым...")
+     Exit Sub
+   End If
+
+   If frm_Raschet_List_Mat2.LLIST = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует длина листа...")
+     Exit Sub
+   End If
+
+   If frm_Raschet_List_Mat2.WLIST = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует ширина листа...")
+     Exit Sub
+   End If
+   
+   If frm_Raschet_List_Mat2.MassaPogMetra = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует масса погонного метра...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_List_Mat2.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_List_Mat2", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 240
+       F.Width = 300 
+   
+   frm_Raschet_List_Mat2.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_List_Mat2.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_List_Mat2.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_List_Mat2.RaschetOf = True Then
+   
+   Call TCSApp.ShowMessageBox("Результат:", "Норма расхода = " + CStr(frm_Raschet_List_Mat2.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_List_Mat2.KIM) + ";" + CHR(13) + _
+                                              "КДЗ = " + CStr(frm_Raschet_List_Mat2.KDZ) + ";" + CHR(13) + _
+                                              "КД = " + CStr(frm_Raschet_List_Mat2.KD) + ";" + CHR(13) + _
+                                              "Масса заготовки = " + CStr(frm_Raschet_List_Mat2.MassaZag) + ";" + CHR(13) + _
+                                              "Размеры заготовки = " + CStr(frm_Raschet_List_Mat2.RazmZag) + ";" )
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+           RecvizM.Properties("DimensionsUnmachined").Value = CStr(frm_Raschet_List_Mat2.RazmZag)
+           RecvizM.Properties("MeasurimentUnit_ID").Value = 1
+           RecvizM.Properties("NumberOfPartsFromOneWorkpiece").Value = CStr(frm_Raschet_List_Mat2.KDZ)
+           RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_List_Mat2.NRash)
+           RecvizM.Properties("UnitForRateSetting").Value = 1
+           RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_List_Mat2.MassaZag)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   
+     'Записываем параметры позиции ТП
+     ParValue = CStr(frm_Raschet_List_Mat2.KIM) 
+     Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+       i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+     Set Par = Nothing
+                                                                       
+     
+   
+   End If
+   
+ If F.ModalResult<>2 Then Exit Sub  
+   
+End Sub
+
+'========================================================================================================================
+'----------------- Расчет нормы лента -----------------
+'========================================================================================================================
+Sub FormMacro_Raschet_Lenta1(TCSActiveModule) 'Расчет - лента
+  call FormMacro_Raschet_Lenta(TCSActiveModule, 1)
+End Sub
+
+Sub FormMacro_Raschet_Lenta2(TCSActiveModule) 'Расчет - лента
+  call FormMacro_Raschet_Lenta(TCSActiveModule, 2)
+End Sub
+
+Sub FormMacro_Raschet_Lenta(TCSActiveModule, rtype) 'Расчет - лента
+ 
+    LogObject.ScriptTimeOut = 0
+   'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал листовой и определяем параметры материала
+   List = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_CODE = ParNMK.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "PROFIL" and PAR_VALUE = "Лента" Then
+           Lenta = True 
+         End If
+         'If PAR_CODE = "LLIST" Then
+         '  frm_Raschet_Lenta.LLIST = PAR_VALUE 
+         'End If
+         If PAR_CODE = "WLIST" Then
+           frm_Raschet_Lenta.WLIST = PAR_VALUE 
+         End If
+         If PAR_CODE = "SIG_V_M" Then
+           frm_Raschet_Lenta.MassaPogMetra = PAR_VALUE 
+         End If
+         If PAR_CODE = "RAZM" Then 'это размер листа
+           frm_Raschet_Lenta.RAZM = PAR_VALUE 
+         End If
+         
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   'Проверяем наличие параметров у позиции ТП
+   Set ParPozTP = TCSActiveModule.Properties("Parameters").AsIDispatch
+     If  Not ParPozTP Is Nothing Then
+       ParPozTP.First
+       Do While not ParPozTP.Eof 
+         PAR_CODE = ParPozTP.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParPozTP.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "TP_MD" Then
+           frm_Raschet_Lenta.MassaDet = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_SZ" Then
+           frm_Raschet_Lenta.TCS_MZ_SZ = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_VZ" Then
+           frm_Raschet_Lenta.TCS_MZ_VZ = PAR_VALUE 
+         End If
+       
+       ParPozTP.Next
+       Loop
+     End If
+   Set ParPozTP = Nothing
+   
+   frm_Raschet_Lenta.RTYPE = rtype
+   
+   'Считываем реквизит "Количество деталей из заготовки"
+   Set Recviz = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+     If  Not Recviz Is Nothing Then 
+       frm_Raschet_Lenta.KDZ = Recviz.Properties( "NumberOfPartsFromOneWorkpiece" ).DisplayText
+     End If
+   Set Recviz = Nothing
+   
+   If Lenta = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является лентой...")
+     Exit Sub
+   End If
+
+   'If frm_Raschet_Lenta.LLIST = "" Then
+   '  Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует длина ...")
+   '  Exit Sub
+   'End If
+
+   If frm_Raschet_Lenta.WLIST = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует ширина ...")
+     Exit Sub
+   End If
+   
+   If frm_Raschet_Lenta.MassaPogMetra = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует масса погонного метра...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_Lenta.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_Lenta", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 240
+       F.Width = 300 
+   
+   frm_Raschet_Lenta.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_Lenta.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_Lenta.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_Lenta.RaschetOf = True Then
+   
+   Call TCSApp.ShowMessageBox("Результат:", "Норма расхода = " + CStr(frm_Raschet_Lenta.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_Lenta.KIM) + ";" + CHR(13) + _
+                                              "КДЗ = " + CStr(frm_Raschet_Lenta.KDZ) + ";" + CHR(13) + _
+                                              "КД = " + CStr(frm_Raschet_Lenta.KD) + ";" + CHR(13) + _
+                                              "Масса заготовки = " + CStr(frm_Raschet_Lenta.MassaZag) + ";" + CHR(13) + _
+                                              "Размеры заготовки = " + CStr(frm_Raschet_Lenta.RazmZag) + ";" )
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+           RecvizM.Properties("DimensionsUnmachined").Value = CStr(frm_Raschet_Lenta.RazmZag)
+           RecvizM.Properties("MeasurimentUnit_ID").Value = 1
+           RecvizM.Properties("NumberOfPartsFromOneWorkpiece").Value = CStr(frm_Raschet_Lenta.KDZ)
+           RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_Lenta.NRash)
+           RecvizM.Properties("UnitForRateSetting").Value = 1
+           RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_Lenta.MassaZag)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   
+     'Записываем параметры позиции ТП
+     ParValue = CStr(frm_Raschet_Lenta.KIM) 
+     Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+       i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+     Set Par = Nothing
+                                                                       
+     
+   
+   End If
+   
+ If F.ModalResult<>2 Then Exit Sub  
+   
+End Sub
+
+Sub FormMacro_Raschet_Prutki(TCSActiveModule) 'Расчет - пруток
+ 
+    LogObject.ScriptTimeOut = 0
+   'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал листовой и определяем параметры материала
+   List = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_CODE = ParNMK.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "PROFIL" and ((PAR_VALUE = "Пруток")or(PAR_VALUE = "Шестигранник")or(PAR_VALUE = "Проволока")or(PAR_VALUE = "Квадрат")) Then
+           Prutok = True 
+         End If
+         'If PAR_CODE = "LLIST" Then
+         '  frm_Raschet_Lenta.LLIST = PAR_VALUE 
+         'End If
+         'If PAR_CODE = "WLIST" Then
+         '  frm_Raschet_Prutki.WLIST = PAR_VALUE 
+         'End If
+         If PAR_CODE = "SIG_V_M" Then
+           frm_Raschet_Prutki.MassaPogMetra = PAR_VALUE 
+         End If
+         If PAR_CODE = "RAZM" Then 'это размер листа
+           frm_Raschet_Prutki.RAZM = PAR_VALUE 
+         End If
+         
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   'Проверяем наличие параметров у позиции ТП
+   Set ParPozTP = TCSActiveModule.Properties("Parameters").AsIDispatch
+     If  Not ParPozTP Is Nothing Then
+       ParPozTP.First
+       Do While not ParPozTP.Eof 
+         PAR_CODE = ParPozTP.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParPozTP.Properties( "PAR_VALUE" ).DisplayText
+         
+         If PAR_CODE = "TP_MD" Then
+           frm_Raschet_Prutki.MassaDet = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_SZ" Then
+           frm_Raschet_Prutki.TCS_MZ_SZ = PAR_VALUE 
+         End If
+         If PAR_CODE = "TCS_MZ_VZ" Then
+           frm_Raschet_Prutki.TCS_MZ_VZ = PAR_VALUE 
+         End If
+       
+       ParPozTP.Next
+       Loop
+     End If
+   Set ParPozTP = Nothing
+   
+   'Считываем реквизит "Количество деталей из заготовки"
+   Set Recviz = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+     If  Not Recviz Is Nothing Then 
+       frm_Raschet_Prutki.KDZ = Recviz.Properties( "NumberOfPartsFromOneWorkpiece" ).DisplayText
+     End If
+   Set Recviz = Nothing
+   
+   If Prutok = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является прутком...")
+     Exit Sub
+   End If
+
+   'If frm_Raschet_Lenta.LLIST = "" Then
+   '  Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует длина ...")
+   '  Exit Sub
+   'End If
+
+  ' If frm_Raschet_Prutki.WLIST = "" Then
+  '   Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует ширина ...")
+  '   Exit Sub
+  ' End If
+   
+   If frm_Raschet_Prutki.MassaPogMetra = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует масса погонного метра...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_Prutki.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_Prutki", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 240
+       F.Width = 300 
+   
+   frm_Raschet_Prutki.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_Prutki.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_Prutki.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_Prutki.RaschetOf = True Then
+   
+   Call TCSApp.ShowMessageBox("Результат:", "Норма расхода = " + CStr(frm_Raschet_Prutki.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_Prutki.KIM) + ";" + CHR(13) + _
+                                              "КДЗ = " + CStr(frm_Raschet_Prutki.KDZ) + ";" + CHR(13) + _
+                                              "Масса заготовки = " + CStr(frm_Raschet_Prutki.MassaZag) + ";" + CHR(13) + _
+                                              "Размеры заготовки = " + CStr(frm_Raschet_Prutki.RazmZag) + ";" )
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+           RecvizM.Properties("DimensionsUnmachined").Value = CStr(frm_Raschet_Prutki.RazmZag)
+           RecvizM.Properties("MeasurimentUnit_ID").Value = 1
+           RecvizM.Properties("NumberOfPartsFromOneWorkpiece").Value = CStr(frm_Raschet_Prutki.KDZ)
+           RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_Prutki.NRash)
+           RecvizM.Properties("UnitForRateSetting").Value = 1
+           RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_Prutki.MassaZag)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   
+     'Записываем параметры позиции ТП
+     ParValue = CStr(frm_Raschet_Prutki.KIM) 
+     Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+       i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+     Set Par = Nothing
+                                                                       
+     
+   
+   End If
+   
+ If F.ModalResult<>2 Then Exit Sub  
+   
+End Sub
+
+
+'========================================================================================================================
+'----------------- Расчет полимерных материалов -----------------
+'========================================================================================================================
+Sub FormMacro_Raschet_Polimer_Mat(TCSActiveModule) ' Расчет полимерных материалов
+ 
+    LogObject.ScriptTimeOut = 0
+
+
+
+    'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал полимерный
+   Polimer = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         If PAR_ID = "1941" and PAR_VALUE = "Полимер" Then
+           Polimer = True 
+         End If
+         If PAR_ID = "1969" Then
+           frm_Raschet_Polimer.K_Usadki = PAR_VALUE 
+         End If        
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   If Polimer = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является полимерным материалом...")
+     Exit Sub
+   End If
+   
+   If frm_Raschet_Polimer.K_Usadki = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует коэффициент усадки...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_Polimer.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_Polimer", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 210
+       F.Width = 300 
+   
+   frm_Raschet_Polimer.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_Polimer.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_Polimer.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_Polimer.RaschetOf = True Then
+   
+     Call TCSApp.ShowMessageBox("Результат:", "Масса заготовки = " + CStr(frm_Raschet_Polimer.M_ZAG) + ";" + CHR(13) + _
+                                              "Норма расхода = " + CStr(frm_Raschet_Polimer.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_Polimer.KIM) + ";")
+   
+    
+    ParValue = CStr(frm_Raschet_Polimer.KIM)
+    
+    Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+      i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+    Set Par = Nothing
+   
+   
+   'Call TCSApp.ShowMessageBox("Ошибка", CStr(i))
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+            RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_Polimer.NRash)
+            RecvizM.Properties("UnitForRateSetting").Value = 1
+            RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_Polimer.M_ZAG)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   End If
+                                                                       
+   If F.ModalResult<>2 Then Exit Sub
+
+    
+End Sub
+
+
+
+'========================================================================================================================
+'----------------- Расчет листовых полимерных материалов -----------------
+'========================================================================================================================
+Sub FormMacro_Raschet_Polimer_List(TCSActiveModule) ' Расчет листовых полимерных материалов
+ 
+    LogObject.ScriptTimeOut = 0
+
+
+
+    'Проверяем, что это материал
+   If TCSActiveModule.Properties( "ATTACH" ).DisplayText <> "25" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Позиция ТП не является материалом...")
+     Exit Sub
+   End If
+      
+   'Проверяем, наличие кода у материала
+   If TCSActiveModule.Properties( "NMK_CODE" ).DisplayText = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала нет кода...")
+     Exit Sub
+   End If
+     
+   'Проверяем, что материал полимерный
+   Polimer = False
+   
+   Set ParNMK = TCSActiveModule.Properties("NmkParameters").AsIDispatch
+     If  Not ParNMK Is Nothing Then 
+       ParNMK.First
+       Do While not ParNMK.Eof
+         PAR_VALUE = ""
+         PAR_ID = ParNMK.Properties( "PAR_ID" ).DisplayText
+         PAR_CODE = ParNMK.Properties( "PAR_CODE" ).DisplayText
+         PAR_VALUE = ParNMK.Properties( "PAR_VALUE" ).DisplayText
+         If PAR_ID = 1941 and PAR_VALUE = "Полимер" Then
+           Polimer = True 
+         End If
+         If PAR_ID = 1941 and PAR_VALUE = "Пластина" Then
+           Polimer = True 
+         End If
+         
+         If PAR_CODE = "UDEL_VES" Then
+           frm_Raschet_List_Polimer.UD_VES = PAR_VALUE 
+         End If        
+         ParNMK.Next
+       Loop
+     End If
+   Set ParNMK = Nothing
+   
+   If Polimer = False Then
+     Call TCSApp.ShowMessageBox("Ошибка", "Материал не является полимерным материалом...")
+     Exit Sub
+   End If
+   
+   If frm_Raschet_List_Polimer.UD_VES = "" Then
+     Call TCSApp.ShowMessageBox("Ошибка", "У материала отсутствует параметр удельного веса (кг/м3)...")
+     Exit Sub
+   End If
+   
+   'Определяем ID номенклатуры
+   Set NMK = TCSActiveModule.Properties("CurrentVersion").AsIDispatch
+     If  Not NMK Is Nothing Then 
+       frm_Raschet_List_Polimer.ID_NMK = NMK.Properties( "NMK_ID" ).DisplayText
+     End If
+   Set NMK = Nothing
+     
+   Set F = TCSApp.TCSForm( "frm_Raschet_List_Polimer", False )
+
+       F.Caption = "Ввод параметров расчета..."
+
+       F.Left = 10
+       F.Top = 10
+       F.Height = 350
+       F.Width = 300 
+   
+   frm_Raschet_List_Polimer.ID_MAT = TCSActiveModule.Properties( "NMK_ID" ).DisplayText
+   frm_Raschet_List_Polimer.ID_VERS_TP = TCSActiveModule.Properties( "VER_ID" ).DisplayText
+   frm_Raschet_List_Polimer.TECH_ID = TCSActiveModule.Properties( "TECH_ID" ).DisplayText
+
+   F.ShowModal
+
+
+   If frm_Raschet_List_Polimer.RaschetOf = True Then
+   
+     Call TCSApp.ShowMessageBox("Результат:", "Масса заготовки = " + CStr(frm_Raschet_List_Polimer.M_ZAG) + ";" + CHR(13) + _
+                                              "Норма расхода = " + CStr(frm_Raschet_List_Polimer.NRash) + ";" + CHR(13) + _
+                                              "КИМ = " + CStr(frm_Raschet_List_Polimer.KIM) + ";")
+   
+    
+    ParValue = CStr(frm_Raschet_List_Polimer.KIM)
+    
+    Set Par = TCSActiveModule.Properties("Parameters").AsIDispatch
+      i = Par.SetParameterValueByParCode("K_MAT_USE", Replace(CStr(ParValue),",","."),-1 , True)
+    Set Par = Nothing
+   
+   
+   'Call TCSApp.ShowMessageBox("Ошибка", CStr(i))
+   
+     Set RecvizM = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+       If  Not RecvizM Is Nothing Then 
+         Call RecvizM.Edit
+           
+            RecvizM.Properties("StandartConsupmtionRate").Value = CStr(frm_Raschet_List_Polimer.NRash)
+            RecvizM.Properties("UnitForRateSetting").Value = 1
+            RecvizM.Properties("WorkpieceMass").Value = CStr(frm_Raschet_List_Polimer.M_ZAG)
+           
+        On Error Resume Next
+        Call RecvizM.SaveChanges
+        Call RecvizM.CancelChanges
+      End If
+    Set RecvizM = Nothing
+   End If
+                                                                       
+   If F.ModalResult<>2 Then Exit Sub
+
+    
+End Sub
