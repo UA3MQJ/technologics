@@ -1,0 +1,7 @@
+Sub FormMacro_TrudPoperNormNMK2(TCSActiveModule) 'Трудовое пооперационное нормирование   
+    LogObject.ScriptTimeOut = 0
+
+    Call KM_TrudNorm_mod.TrudPoperNormNMK(TCSActiveModule)
+    
+    TCSActiveModule.Refresh   
+End Sub
