@@ -1,0 +1,2608 @@
+Sub FormMacro_Perenos_Koda(TCSActiveModule)
+
+ For a = 0 To TCSActiveModule.SelectedRowsCount-1
+    If TCSActiveModule.GotoSelectedRow(a) Then
+      If TCSActiveModule.Properties("NMK_CODE").DisplayText ="" Then
+         Set NMK_Param = TCSActiveModule.Properties("Parameters").AsIDispatch
+         NMK_Param.First
+          Do While Not NMK_Param.EOF
+             If NMK_Param.Properties("PAR_CODE").AsString ="1C_MAT" Then
+                TCSActiveModule.Edit
+                TCSActiveModule.Properties("NMK_CODE").Value = NMK_Param.Properties("PAR_VALUE").AsString
+                TCSActiveModule.SaveChanges
+             End If    
+             NMK_Param.Next
+          Loop
+         
+      End If
+    End If
+ Next
+
+End Sub
+
+
+
+Sub FormMacro_ProverkaGototvnost(TCSActiveModule)                               '???????? ?????????? ? ????????????
+Call CSDN_Form_Prov_Got.ShowNmkReadyForm_Macro( TCSActiveModule )
+End Sub
+
+
+ Sub FormMacro_ADD_ZNAZ_PARAM(TCSActiveModule)
+Dim spisok(20)
+
+  Set Param = TCSApp.Parameters
+  If Param.RunModuleForSelect( "???????? ????????", False ) > 0 Then  
+     ID = Param.Properties("ID").AsInteger
+     KOD_PARAM = Param.Properties("PAR_CODE").AsString
+     TIP = Param.Properties("PAR_TYPE").AsString
+  End If
+   Call TCSApp.ShowMessageBox("fdfdfd",ID)
+   
+   If TIP = "S" Then
+   
+    Set List = Param.Properties("ParListValues").AsIDispatch
+    
+    List.First
+    i= 0
+    Do While Not List.EOF
+    spisok(i) = List.Properties("LIST_VALUE").AsString
+    
+    List.Next
+    i = i + 1
+    Loop
+    
+   
+    
+    
+    Set UsrGm = TCSApp.CreateUserGModule("Module")
+    Call UsrGm.ClearProps
+    Call UsrGm.ClearScripCommands 
+    UsrGm.ReadOnlyUserMode = False
+    Call UsrGm.AddProp("IS_SELECTED", "????????", 5, True, False, 50)
+    Call UsrGm.AddProp("ZNAZ", "????????", 1, True, True, 250)
+    
+    For j = 0 to i-1
+    Call UsrGm.CreateNew
+    UsrGm.Properties("IS_SELECTED").AsBoolean = False
+    UsrGm.Properties("ZNAZ").AsString = spisok(j)
+    Call UsrGm.SaveChanges
+    Next
+    
+    ID = UsrGm.ShowModal("?????? ????????")
+    Rez = UsrGm.Properties("ZNAZ").AsString
+    
+    Set UsrGm = Nothing
+    
+    
+    Call TCSApp.ShowMessageBox("rezult",Rez)
+   
+   For a = 0 To TCSActiveModule.SelectedRowsCount-1
+    If TCSActiveModule.GotoSelectedRow(a) Then
+    
+     Set NMK_PAR = TCSActiveModule.Properties("Parameters").AsIDispatch
+     I = NMK_PAR.SetParameterValueByParCode(KOD_PARAM,Rez,-1,True) 
+     Set NMK_PAR = Nothing
+    
+    End If
+    Next
+    
+  End If
+    
+  If TIP = "B" Then
+  
+  For a = 0 To TCSActiveModule.SelectedRowsCount-1
+    If TCSActiveModule.GotoSelectedRow(a) Then
+    
+     Set NMK_PAR = TCSActiveModule.Properties("Parameters").AsIDispatch
+     I = NMK_PAR.SetParameterValueByParCode(KOD_PARAM,"T",-1,True) 
+     Set NMK_PAR = Nothing
+    
+    End If
+    Next  
+    
+  End If
+
+End Sub
+
+Sub FormMacro_test_test(TCSActiveModule)
+  For a = 0 To TCSActiveModule.SelectedRowsCount - 1    
+        If TCSActiveModule.GotoSelectedRow( a ) Then
+          
+         Set linkss = TCSActiveModule.Properties("NmkLinks").AsIDispatch
+        
+         Call TCSApp.ShowMessageBox( "", linkss.Properties("NMK_NAME").AsString )
+
+        End If
+        
+  Next
+End Sub
+
+Sub FormMacro_Perepis_obozn(TCSActiveModule)    
+
+  For a = 0 To TCSActiveModule.SelectedRowsCount - 1    
+        If TCSActiveModule.GotoSelectedRow( a ) Then  
+          
+            Obozn = TCSActiveModule.Properties("NOTE").AsString
+            TCSActiveModule.Edit 
+            TCSActiveModule.Properties("NOTE").Value = " "    
+            TCSActiveModule.Properties("NMK_CODE").Value = Obozn 
+            TCSActiveModule.SaveChanges
+        
+        End If
+  Next
+
+End Sub
+
+
+Sub FormMacro_New_CODE(TCSActiveModule)
+   Call KMT_Library_1.CREATE_NMK_CODE(TCSActiveModule)
+End Sub
+
+Sub FormMacro_ADD_New_CODE(TCSActiveModule)
+   Call KMT_Library_1.ADD_New_CODE(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Copy_TP_Isp(TCSActiveModule)
+    Call   test.Copy_TP_ISP(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Copy_TP_NMK(TCSActiveModule)
+    Call   test.Copy_TP_NMK(TCSActiveModule)
+End Sub
+
+Sub FormMacro_ISPOLNENIE(TCSActiveModule)
+      Call otzet.cozdanie_isp(TCSActiveModule)
+       End Sub
+
+Sub FormMacro_test2(TCSActiveModule)
+
+     Set objDll = CreateObject( "Launcher.Launcher" )
+    temp = objDll.getTemp()
+    Set docss = TCSActiveModule.Properties("NomenclatureDocuments").AsIDispatch
+    If  Not docss Is Nothing Then 
+        Call docss.first
+        Set files = docss.Properties("FILES").AsIDispatch
+        If Not files Is Nothing Then 
+            Call files.first    
+            docName = files.Properties("NAME").AsString       
+            'in = InStr(1,docName, ".pdf")
+            'If (in > 0) Then
+                 Call files.SaveAs(temp&"/_"&docName, 0)
+                 Call files.DeleteRecord(False)     
+                 
+                 Call TCSApp.HideProgressMessage       
+                 Call objDll.start("Aaoaeu eniieiaiea 1234567", docName)    
+                Call Files.AddFile(temp&docName, -1)  
+                Call objDll.deleteFile(temp&"/_"&docName)
+            'End If
+        End If 
+    End If
+
+
+
+  '  Call otzet.FormMacro_SVERKA_PO_DATE(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Zamena_klassov_SP(TCSActiveModule)
+      Call MeinMakros.Zamena_klassov_v_SP(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Configuration(TCSActiveModule) 
+
+   Call   test.Config(TCSActiveModule)
+
+End Sub
+
+Sub FormMacro_Perenos_API_Link(TCSActiveModule)
+   Call MeinMakros.Perenos_API_LINK(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Obrat_View(TCSActiveModule)
+    Call MeinMakros.Link_View_Obr(TCSActiveModule) 
+End Sub
+
+
+
+
+
+
+
+
+Sub FormMacro_Pezat_Kart_and_Zert(TCSActiveModule)   
+
+   For a = 0 To TCSActiveModule.SelectedRowsCount - 1    
+        If TCSActiveModule.GotoSelectedRow( a ) Then 
+      
+        Set NMK_DOC = TCSActiveModule.Properties("NomenclatureDocuments").AsIDispatch
+        
+        
+        End If
+   Next
+
+End Sub 
+
+
+Sub FormMacro_Prosmotr3D(TCSActiveModule)  
+
+    
+ 'Call   test.Config(TCSActiveModule)
+
+
+
+ 
+ '    If TCSActiveModule.SelectedRowsCount <> 1 Then
+ '       Call TCSApp.ShowMessageBox("??????", "???????? ?????? ?????????? ? ?????? ????(!)") 
+ '       Exit Sub
+ '   End If
+    For a = 0 To TCSActiveModule.SelectedRowsCount - 1    
+        If TCSActiveModule.GotoSelectedRow( a ) Then         
+        NMK_ID = TCSActiveModule.Properties("ID").AsInteger   
+        
+     '   If TCSApp.NmkClasses.RunModuleForSelect("???????? ?????", False) Then
+
+        I = TCSApp.Inventory.NomenclaturesBalance(24).ShowModal("??????? ??????????? ?? ??????")
+        
+        Set Ost =  TCSApp.Inventory.NomenclaturesBalance(24)
+        
+             For r = 0 To Ost.SelectedRowsCount - 1    
+           If Ost.GotoSelectedRow( r ) Then     
+        NMK_id = Ost.Properties("ID").AsString
+        Set NMK = TCSApp.SingleNMKFromID(NMK_ID)
+        NMK.Edit
+       '   Call TCSApp.ShowMessageBox("?-??-??", NMK.Properties("NAME").AsString)
+        NMK.Properties("NODE_ID").Value = 7657
+        NMK.SaveChanges 
+        Set NMK = Nothing
+        End If
+        Next    
+        
+    '    ost.First
+      '  Do While Not Ost.EOF
+       '   If Ost.Properties("ID").AsInteger = NMK_Id Then
+       '     Call TCSApp.ShowMessageBox( "??????? ??????????? "+Ost.Properties("NAME").AsString+" ?? ??????:", Ost.Properties("BLNMK_QUAN").AsString)
+       '   End If  
+       ' Ost.Next
+      '  Loop
+
+ '   End If
+
+
+        
+    '    Set BalanceNmkCard = TCSApp.Inventory.BalanceNmkCards( 205, NMK_ID )    
+        
+   '     Call TCSApp.ShowMessageBox( "", BalanceNmkCard.Properties("QUAN").AsString )
+        End If
+    Next
+
+
+   '  Set Agents = TCSApp.CounterAgents 
+     
+   '    Call TCSApp.ShowMessageBox( "", Agents.Properties("NAME").AsString )
+                  
+    '     Call Agents.CreateNew 
+    '     Agents.Properties("NAME").Value="contrag3r453434343434343"   
+          'Agents.Properties("CLASSIF_NAME").Value="??????????" 
+    '     Call Agents.SaveChanges
+
+    
+'           Dim XLS
+'    Dim WBK
+'    Dim cn
+'    Dim NewModule
+'    
+'    Set XLS = CreateObject("Word.Application")
+'    XLS.Visible = True
+   ' Set WBK = XLS.Workbooks.Add
+        
+ '   XLS.DisplayAlerts = False
+  '  For cn = WBK.Worksheets.Count To 2 Step -1
+   '     WBK.Worksheets(cn).Delete
+ '   Next
+  '  Set WBK = Nothing
+  '  
+  '  Set NewModule = XLS.ActiveWorkbook.VBProject.VBComponents.Add(1)
+  '  NewModule.Name = "TCSModule"
+    
+      
+'    On Error Resume Next
+'    TCSActiveModule.BeginUpdate
+'    Call XLS.Run("ToExcel", TCSActiveModule)
+'    TCSActiveModule.EndUpdate
+'    
+'    Set XLS = Nothing
+
+    
+    
+End Sub
+
+Sub FormMacro_Detali_s_techn(TCSActiveModule)
+    Call  MeinMakros.Tech(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Smena_Klass(TCSActiveModule)  
+   Call MeinMakros.Smena_Klassa(TCSActiveModule) 
+End Sub
+
+
+Sub FormMacro_ActiveVersionTP(TCSActiveModule)
+    Call  MeinMakros.ActiveVer(TCSActiveModule)
+End Sub
+
+Sub FormMacro_ChangeMat(TCSActiveModule)
+    If TCSActiveModule.SelectedRowsCount < 1 Then 
+        Call TCSApp.ShowMessageBox("??????", "???????? ??????? ????????????(!)") 
+        Exit Sub
+    End If
+
+    For a = 0 To TCSActiveModule.SelectedRowsCount - 1 
+         If TCSActiveModule.GotoSelectedRow( a ) Then
+            Set tech = TcsApp.NmkTechnology(TCSActiveModule.Properties("ID").AsInteger, -1)
+            ChangeMatInTech(Tech)
+            TCSActiveModule.Next 
+         End If
+   Next
+ 
+End Sub
+
+
+Sub ChangeMatInTech(tech)
+    tech.First
+    markaID = 1029
+    materialID = 25
+    Do While Not tech.EOF
+        attach = tech.Properties("ATTACH").AsInteger
+        
+        If (attach = materialID) Then            
+            materialName = tech.Properties("NMK_NAME").AsString
+            Call TCSApp.ShowMessageBox("found", materialName)
+            Set params = tech.Properties("Parameters").AsIDispatch  
+            params.First
+            Do While Not params.EOF
+                code = params.Properties("PAR_CODE").AsString
+                Select Case code
+                Case "TCS_MZ_SR"
+                     TCS_MZ_SR = params.Properties("PAR_VALUE").AsString
+                Case "TCS_MZ_DLZ"
+                     TCS_MZ_DLZ = params.Properties("PAR_VALUE").AsString 
+                Case "TCS_MZ_RZ"
+                     TCS_MZ_RZ = params.Properties("PAR_VALUE").AsString
+                End Select
+                params.Next
+            Loop
+            tech.DeleteRecord False 
+        
+        Else  
+            
+            If (attach = markaID) Then
+                markaName = tech.Properties("NMK_NAME").AsString
+                Call TCSApp.ShowMessageBox("found", markaName) 
+                tech.DeleteRecord False
+            Else 
+                tech.Next 
+            End If
+            
+        End If
+        
+    Loop 
+    Call TCSApp.ShowMessageBox("", markaName + " " + materialName)
+    Set newMaterial = TCSApp.SingleNMKFromNMKNote(markaName + " " + materialName)
+    
+    I = tech.AddNMKToTechnology(materialID, newMaterial.Properties("ID").AsString, 0)
+    'Set params = tech.Properties("Parameters").AsIDispatch 
+    'J = params.SetParameterValueByParCode("TCS_MZ_RZ", TCS_MZ_RZ, 0, True) 
+    
+End Sub 
+
+Function searchMaterial(materialName, markaName)
+    Set material = TCSApp.SingleNMKFromNMKNote(markaName + " " + materialName)
+    Set searchMaterial = material
+End Function
+
+
+
+Sub FormMacro_Dobavlenie_param(TCSActiveModule)
+   Call  MeinMakros.Zap_Par(TCSActiveModule)
+End Sub
+
+Sub FormMacro_Findet_Param(TCSActiveModule)
+ Call  MeinMakros.Findet_Par(TCSActiveModule)
+End Sub
+
+Sub FormMacro_QV(TCSActiveModule)
+    'Call test.test_QV(TCSActiveModule) 
+   ' Call CSDN_VIS_Library.IntoExcel(TCSActiveModule)
+   ' Call CSDN_VIS_Library.OpenExcelAndRunMyMacro(TCSActiveModule) 
+    
+   Dim XLS    ' As Excel.Application
+    Dim WBK    ' As Workbook
+    Dim FileName
+    
+   Set XLS = CreateObject("Excel.Application") 
+    XLS.Visible = False
+
+    FileName = XLS.GetOpenFilename("Ms Excel (*.xls), *.xls", 1, "???????? ?????? MS Excel")
+
+
+    If FileName <> False Then
+        XLS.Visible = True
+        Set WBK = XLS.Workbooks.Open(FileName)
+        On Error Resume Next
+        TCSActiveModule.BeginUpdate
+       ' Call XLS.Run("MyMacro", TCSActiveModule)    
+        Set nmk = Range("A1:A10")
+   Set kol = Range("B1:B10")
+   Set zena = Range("C1:C10")
+
+ For I = 1 To 10
+ Call TCSApp.ShowMessageBox (nmk(i))
+ Next           
+        TCSActiveModule.EndUpdate
+        Set WBK = Nothing
+    End If
+
+    Set XLS = Nothing
+ 
+    
+End Sub
+
+
+
+
+Sub FormMacro_Dob_param(TCSActiveModule)
+  If TCSActiveModule.SelectedRowsCount < 1 Then
+        Call TCSApp.ShowMessageBox("??????", "???????? ??????? ????????????(!)") 
+        Exit Sub
+    End If
+    For a = 0 To TCSActiveModule.SelectedRowsCount - 1 
+         If TCSActiveModule.GotoSelectedRow( a ) Then           
+          Set Param = TCSActiveModule.Properties("Parameters").AsIDispatch 
+                Param.First
+                Do While Not Param.EOF
+                If Param.Properties("PAR_ID").AsInteger = 1971 Then '241 Then
+                znaz = Param.Properties("PAR_VALUE").AsString 'AsFloat   
+               ' new_znaz = round(znaz,2)
+               ' End If   
+               ' If new_znaz = 0 Then
+               ' new_znaz = round(znaz,3) 
+              '  End If   
+              '  If new_znaz = 0 Then
+              '  new_znaz = round(znaz,4) 
+              '  End If
+              '  If new_znaz = 0 Then
+              '  new_znaz = round(znaz,5) 
+             '  End If
+             '   If new_znaz = 0 Then
+              '  new_znaz = round(znaz,6) 
+             '   End If   
+             new_znaz = "?"+znaz  
+             End If
+                Param.Next
+                Loop 
+                 
+         '      Call TCSApp.ShowMessageBox("??????", znaz)  
+         '      Call TCSApp.ShowMessageBox("??????2", new_znaz)       
+                 new_znaz = CStr(new_znaz) 
+                         I = Param.SetParameterValueByParCode("1C_MAT", new_znaz, -1, True)
+                       ' I = Param.SetParameterValueByParCode("TCS_ST_KG", Replace(new_znaz, ",", "."), -1, True) 
+                       TCSActiveModule.SaveChanges 
+            
+            TCSActiveModule.Next 
+         End If
+   Next
+
+End Sub
+
+Sub FormMacro_Izm_znaz(TCSActiveModule)
+    Call  test.FormMacro_Izm_znazenia(TCSActiveModule)
+End Sub
+
+Sub FormMacro_testDll(TCSActiveModule)
+    I = TCSApp.Messages.RunModuleForSelect("???????? ????????? ? ?????????", False)
+End Sub
+
+Sub FormMacro_DoubleLinks(TCSActiveModule)
+    Call Link.DoubleLinks(TCSActiveModule)
+End Sub 
+
+
+
+
+
+
+Sub FormMacro_Techproc(TCSActiveModule)
+    Call Techproccreate.Main(TCSActiveModule)
+End Sub
+
+
+Sub FormMacro_DelTechnSelected(TCSActiveModule) 
+     Dim id
+     For I = 0 To TCSActiveModule.SelectedRowsCount - 1
+         If TCSActiveModule.GotoSelectedRow(I) Then   
+             id = TCSActiveModule.Properties("ID").AsInteger             
+             Call CSDN_ClearData.DeleteAllNmkTechnologys(id)
+         End If 
+     Next
+
+End Sub                                         
+
+Sub FormMacro_DelSpecSelected(TCSActiveModule) 
+     Dim id
+     For I = 0 To TCSActiveModule.SelectedRowsCount - 1
+         If TCSActiveModule.GotoSelectedRow(I) Then   
+             id = TCSActiveModule.Properties("ID").AsInteger             
+             Call CSDN_ClearData.DeleteAllNmkSpecifications(id)
+         End If 
+     Next
+
+End Sub
+
+Sub FormMacro_DeleteAPIs(TCSActiveModule)
+     For I = 0 To TCSActiveModule.SelectedRowsCount - 1
+         If TCSActiveModule.GotoSelectedRow(I) Then   
+             Call DeleteAPI(TCSActiveModule)              
+         End If 
+     Next
+End Sub
+
+Sub DeleteAPI(TCSActiveModule) 
+     Set API_NmkUserLinks = TCSActiveModule.Properties("API_NmkUserLinks").AsIDispatch  
+     API_NmkUserLinks.First
+     Do While Not API_NmkUserLinks.EOF 
+          API_NmkUserLinks.DeleteRecord False
+     Loop 
+End Sub
+
+Sub FormMacro_Linksss(TCSActiveModule)
+    Call CSDN_VR_Library.Run1Synchro_Links(TCSActiveModule)
+End Sub
+
+Sub FormMacro_del_param(TCSActiveModule)
+    Call CSDN_DESEAN_Library.DelPar(TCSActiveModule)
+End Sub
+
+Sub FormMacro_testSP(TCSActiveModule)
+Set NMkSpecificationVersions = TCSApp.NMkSpecificationVersions(TCSActiveModule.Properties( "ID" ).Asinteger)
+res = NMkSpecificationVersions.RunModuleForSelect( "", True ) 
+End Sub
+
+Sub FormMacro_test1(TCSActiveModule)
+    Set IParameters = TCSApp.Parameters
+    If Not IParameters Is Nothing Then 
+        IParameters.UserModuleName = IParameters.UniqueUserModuleName
+        If IParameters.RunModuleForSelect( "???????? ????????", False )>0 Then
+            ParID = IParameters.Properties( "ID" ).AsSafeInteger
+        End If
+        Call TCSapp.DeleteModuleByUserModuleName( IParameters.UserModuleName )
+    End if
+    Set INmkClasses = TCSApp.NmkClasses
+    If Not INmkClasses Is Nothing Then 
+        INmkClasses.UserModuleName = INmkClasses.UniqueUserModuleName
+        If INmkClasses.RunModuleForSelect( "???????? ?????", False )>0 Then
+            Set INomenclatures = TCSApp.Nomenclatures( INmkClasses.Properties( "ID" ).AsSafeInteger )
+            If Not INomenclatures Is Nothing Then 
+                INomenclatures.UserModuleName = INomenclatures.UniqueUserModuleName
+                If INomenclatures.RunModuleForSelect( "???????? ??????", True )>0 Then
+                    For I=0 To INomenclatures.SelectedRowsCount-1
+                        If INomenclatures.GotoSelectedRow(I) Then         
+                            Set INmkParameters = INomenclatures.Properties("Parameters").AsIDispatch
+                            If  Not INmkParameters Is Nothing Then 
+                                res = INmkParameters.SetParameterValueByParId( ParID, "0.1", NMK_ID, True )
+                                Set INmkParameters = Nothing
+                            End If
+                        End If
+                    Next
+                End If
+                Call TCSapp.DeleteModuleByUserModuleName( INomenclatures.UserModuleName )
+            End if
+        End If
+        Call TCSapp.DeleteModuleByUserModuleName( INmkClasses.UserModuleName )
+    End if
+End Sub
+
+Sub FormMacro_test_ShowParameterCard( TCSActiveModule ) 'Test_ShowParameterCard
+    Set INmkParameters = TCSActiveModule.Properties("Parameters").AsIDispatch
+    If Not INmkParameters Is Nothing Then
+        Call TCSApp.ShowMessageBox( "???????", INmkParameters.IsParameterValues )
+'        Call INmkParameters.ShowParameterCard( -1, False )
+        Set INmkParameters = Nothing
+    End If
+End Sub 
+
+Sub FormMacro_Test_NmkVersions( INomenclatures )'Test_NmkVersions
+    NmkID = INomenclatures.Properties("ID").AsInteger
+    StartTime = Time
+    For i = 1 To 1000
+        pbStr = CSDN_DESEAN_Library.ShowProgressBarNote(pbStr, Cstr( i ) )        
+        Call GetVersion1( NmkID, VerID )
+    Next
+    Time1 = Time
+    For i = 1 To 1000
+        pbStr = CSDN_DESEAN_Library.ShowProgressBarNote(pbStr, Cstr( i ) )        
+        Call GetVersion2( NmkID, VerID )
+    Next
+    Time2 = Time   
+    Call TCSApp.HideProgressMessage
+    Call TCSApp.ShowMessageBox( "", "StartTime = " & StartTime & vbNewLine )
+End Sub
+
+Sub GetVersion1( NmkID, VerID )
+    VerID = -1
+    Set INmkVersions = TCSapp.NmkSpecificationVersions( NmkID )
+    INmkVersions.UserModuleName = INmkVersions.UniqueUserModuleName
+    Call INmkVersions.First
+    Do While Not INmkVersions.Eof
+        If INmkVersions.IsActive Then
+            VerID = INmkVersions.Properties("ID").AsInteger
+            Exit Do
+        End If
+        Call INmkVersions.Next
+    Loop
+    Call TCSapp.DeleteModuleByUserModuleName(INmkVersions.UserModuleName)
+End Sub
+
+Sub GetVersion2( NmkID, VerID )
+    Set SingleNmk = TCSapp.SingleNmkFromId( NmkID )
+    If Not SingleNmk Is Nothing Then
+        SingleNmk.UserModuleName = SingleNmk.UniqueUserModuleName
+        If SingleNmk.Properties("HAS_SPEC").AsBoolean Then
+            Set NmkSpecification = SingleNmk.Properties("NmkSpecification").AsIDispatch
+            If Not NmkSpecification Is Nothing Then
+                Set CurrentVersion = NmkSpecification.Properties("CurrentVersion").AsIDispatch
+                If Not CurrentVersion Is Nothing Then
+                    VerID = CurrentVersion.Properties("ID").AsInteger
+                    Set CurrentVersion = Nothing
+                End If
+                Set NmkSpecification = Nothing
+            End If
+        End If
+        Call TCSapp.DeleteModuleByUserModuleName(SingleNmk.UserModuleName)
+    End If
+End Sub
+
+Sub FormMacro_edit_TTP(TCSActiveModule)
+    ' ???? ????????
+    If TCSActiveModule.Properties("ATTACH").AsSafeInteger = 21 Then    
+        Dim TechAttr
+        Set TechAttr = TCSActiveModule.Properties("TechnologyAttributes").AsIDispatch
+        '???? ??? ?????? ?? ???
+        If TechAttr.Properties("TypifiedManufacturingProcess_Nmk_ID").AsSafeInteger = 0 Then
+            Dim Nmks
+            Set Nmks = TCSApp.Nomenclatures(27) 'ID ???
+            If Nmks.RunModuleForSelect("???????? ???", False) > 0 Then
+                Call TechAttr.Edit
+                TechAttr.Properties("TypifiedManufacturingProcess_Class_ID").Value = Nmks.Properties("NMK_CLASSIF_TYPE_REF").AsInteger
+                TechAttr.Properties("TypifiedManufacturingProcess_Nmk_ID").Value = Nmks.Properties("ID").AsInteger
+                Call TechAttr.SaveChanges
+                Call TechAttr.CancelChages
+                
+                '?????????? ?????? ? ????????????
+                Dim NmkSpc
+                Set NmkSpc = Nmks.Properties("NmkSpecification").AsIDispatch           
+                NmkSpc.CreateNew
+                NmkSpc.Properties()
+            End If
+        End If
+    End If
+End Sub
+
+Sub FormMacro_TestLocate(TCSActiveModule)'TestLocate
+'    TCSapp.ShowOneTreeNodeData = False
+    Set INomenclatures = TCSApp.Nomenclatures(TCSActiveModule.Properties( "NMK_CLASSIF_TYPE_REF" ).AsInteger)
+    INomenclatures.UserModuleName = INomenclatures.UniqueUserModuleName
+    If INomenclatures.Locate( "NOTE", "??.164.23.60-03", 0 ) Then  
+        res = INomenclatures.ShowModal( "" )
+    End If
+    Call TCSapp.DeleteModuleByUserModuleName( INomenclatures.UserModuleName )
+End Sub
+
+Sub FormMacro_WhereUsed( INomenclatures )'WhereUsed
+    Set WhereUsed_Nomenklature = INomenclatures.ChildModules.ModuleByName("WhereUsed_Nomenklature").AsIDispatch
+    If Not WhereUsed_Nomenklature Is Nothing Then 
+        Set WhereUsed_Nomenklature_in_specification = WhereUsed_Nomenklature.ChildModules.ModuleByName("WhereUsed_Nomenklature_in_specification").AsIDispatch
+        If Not WhereUsed_Nomenklature_in_specification Is Nothing Then 
+            result = WhereUsed_Nomenklature_in_specification.ShowModal("??? ???????????? ? ????????????")
+            Set WhereUsed_Nomenklature_in_specification = Nothing
+        End If
+        Set WhereUsed_Nomenklature = Nothing
+    End If
+End Sub
+
+Sub FormMacro_PCAD2x(TCSActiveModule)  
+   LogObject.ScriptTimeOut = 0 
+   Set z = CreateObject("PCADSpc.PCSpcCl")
+   Call z.Run(TCSApp, TCSActiveModule.Properties("ID").AsInteger)
+End Sub
+
+Sub FormMacro_FindNmkFromNOTE( TCSActiveModule )                '????? ???????????? ?? ???? ????????????
+    Call CSDN_DESEAN_Library.FindNmkFromNOTE( "" )
+End Sub
+
+Sub FormMacro_01_WU(TCSActiveModule)                                                 '?????????? 
+Call CSDN_DESEAN_Library.WU(TCSActiveModule) : End Sub
+
+Sub FormMacro_02_Run_Tree(TCSActiveModule)                                           '????? ????????? ?? ?????
+Call CSDN_VR_Library.Run_Tree(TCSActiveModule) : End Sub
+
+Sub FormMacro_91_Find_NBarCode(TCSActiveModule)                                      '????? ?? ?????-????
+Call CSDN_DESEAN_Library.Find_NBarCode(TCSActiveModule) : End Sub        
+
+Sub FormMacro_92_SIGN_DocFromBarCode(TCSActiveModule)                                '????????? ???????? ?? ?????-???? 
+Call CSDN_DESEAN_Library.SIGN_DocFromBarCode(TCSActiveModule) : End Sub        
+
+Sub FormMacro_93_Set_BarCode_EAN13_doc(TCSActiveModule)                              '????????? ?????-??? ?????????? ????????
+Call CSDN_DESEAN_Library.Set_BarCode_EAN13(TCSActiveModule) : End Sub        
+
+Sub FormMacro_94_NBarCodeDEL(TCSActiveModule)                                        '??????? ?????-???? ? ?????????? ???????
+Call CSDN_DESEAN_Library.DELBarCode(TCSActiveModule) : End Sub        
+
+Sub FormMacro_99_DelSelected(TCSActiveModule)                                        '??????? ?????????? ???????  
+Call CSDN_DESEAN_Library.DelSelected(TCSActiveModule) : End Sub
+
+Sub FormMacro_WriteModifyPar(TCSActiveModule)                                        '???????? ???????? "??????????????" ? ???????? ?????? ?? ???? ? ?????? ??????? ??  
+Call CSDN_DESEAN_Library.WriteModifyPar(TCSActiveModule) : End Sub
+
+Sub FormMacro_LinksTabNorm(TCSActiveModule)                                          '???????? ????????????? ??????
+Call CSDN_VR_Library.LinksTabNorm(TCSActiveModule) : End Sub
+
+Sub FormMacro_Link_View(TCSActiveModule)                                             '???????? API ????????                 
+Call CSDN_VR_Library.Link_View(TCSActiveModule):End Sub
+  
+Sub FormMacro_RLink_Making(TCSActiveModule)                                          '?????? ????????  
+Call CSDN_VR_Library.Link_Making(TCSActiveModule):End Sub
+
+Sub FormMacro_96_WriteModifyPar(TCSActiveModule)                             '???????? ???????? "??????????????" ? ???????? ?????? ?? ???? ? ?????? ??????? ??     
+Call CSDN_DESEAN_Library.WriteModifyPar(TCSActiveModule) : End Sub
+
+
+'tagEnumMessageFolders
+const mfInbox = 1    'Папка "Входящие"
+const mfSent = 2    'Папка "Отправленные"
+const mfDraft = 3    'Папка "Черновики"
+const mfArchive = 4    'Папка "Архивные"
+const mfRecycleBin = -2    'Папка "Удаленные"
+
+'tagMultiUpdatePropOptions
+const MultiUpdatePropShowResults = 1    'Показать результаты
+const MultiUpdatePropExitOnFirstError = 2    'Прекратить на первой ошибке
+const MultiUpdatePropSkipUpdateErrors = 4    'Не показывать ошибки сохранения в БД
+const MultiUpdatePropRaiseErrorMessage = 8    'Сгенерировать исключение обо всех полученных ошибках сохранения в БД.
+const MultiUpdatePropMakeRefresh = 16    'Обновить набор данных целиком после успешных изменений
+
+'tagEnumMyDocRights
+const mdrCreateNewDoc = 10000    'Идентификатор права создания нового документа
+const mdrCreateNewDocVer = 10001    'Идентификатор права создания новой версии
+const mdrEditDocHeader = 10002    'Идентификатор права редактирования заголовка документа
+const mdrEditDocVerHeader = 10003    'Идентификатор права редактирования заголовка версии документа
+const mdrDeleteDocVer = 10004    'Идентификатор права удаления версии документа
+const mdrEditDocParams = 10005    'Идентификатор права редактирования атрибутов документа
+const mdrEditDocVerParams = 10006    'Идентификатор права редактирования атрибутов версии документа
+const mdrViewFiles = 10007    'Идентификатор права просмотра файлов версии документа
+const mdrEditFiles = 10008    'Идентификатор права редактирования файлов версии документа
+const mdrCommentFiles = 10009    'Идентификатор права комментирования файлов версии документа
+const mdrEditLists = 10010    'Идентификатор права редактирования листов документа
+const mdrRouteDocVer = 10011    'Идентификатор права изменения способа обработки
+const mdrGrantAccess = 10012    'Идентификатор права назначения прав доступа к документу
+const mdrSignDocVer = 10013    'Идентификатор права подписывания документа за других лиц
+const mdrLinkDoc = 10014    'Идентификатор права осуществлять связь с другими документами
+const mdrLinkNmk = 10015    'Идентификатор права осуществлять связь с номенклатурой
+const mdrUseNmk = 10016    'Идентификатор права работать со связанной номенклатурой
+
+'tagEnumDocRightFlags
+const drfCreateNewDoc = 1    'Маска права создания нового документа
+const drfCreateNewDocVer = 2    'Маска права создания новой версии
+const drfEditDocHeader = 4    'Маска права редактирования заголовка документа
+const drfEditDocVerHeader = 8    'Маска права редактирования заголовка версии документа
+const drfDeleteDocVer = 16    'Маска права удаления версии документа
+const drfEditDocParams = 32    'Маска права редактирования атрибутов документа
+const drfEditDocVerParams = 64    'Маска права редактирования атрибутов версии документа
+const drfViewFiles = 128    'Маска права просмотра файлов версии документа
+const drfEditFiles = 256    'Маска права редактирования файлов версии документа
+const drfCommentFiles = 512    'Маска права комментирования файлов версии документа
+const drfEditLists = 1024    'Маска права редактирования листов документа
+const drfRouteDocVer = 2048    'Маска права изменения способа обработки
+const drfGrantAccess = 4096    'Маска права назначения прав доступа к документу
+const drfSignDocVer = 8192    'Маска права подписывания документа за других лиц
+const drfLinkDoc = 16384    'Маска права осуществлять связь с другими документами
+const drfLinkNmk = 32768    'Маска права осуществлять связь с номенклатурой
+const drfUseNmk = 65536    'Маска права работать со связанной номенклатурой
+
+'tagEnumOpenDocCommands
+const odcUnload = -1    'Выгрузить файловый состав документа на диск
+const odcUnloadWithLock = -2    'Выгрузить файловый состав документа на диск и  заблокировать документ
+const odcLock = -3    'Заблокировать документ без выгрузки
+
+'tagEnumCreateDocStructFlags
+const CreateDocStructFlagsFlags = 1
+const CreateDocStructFlagsDocNote = 2
+const CreateDocStructFlagsDocName = 4
+const CreateDocStructFlagsDocTypeID = 8
+const CreateDocStructFlagsArchiveTreeID = 16
+const CreateDocStructFlagsWorkFlowTypeID = 32
+const CreateDocStructFlagsWorkGroupID = 64
+const CreateDocStructFlagsDocParams = 128
+const CreateDocStructFlagsDlgCaption = 256
+const CreateDocStructFlagsV1 = 511
+const CreateDocStructFlagsNext = 0
+
+'tagEnumCreateSketchStruct
+const CreateSketchStructFlagsSketchNote = 1
+const CreateSketchStructFlagsSketchType = 2
+const CreateSketchStructFlagsFileName = 4
+const CreateSketchStructFlagsDocFile = 8
+const CreateSketchStructFlagsV1 = 15
+const CreateSketchStructFlagsNext = 0
+
+'tagTxActiveFormBorderStyle
+const afbNone = 0    'afbNone
+const afbSingle = 1    'afbSingle
+const afbSunken = 2    'afbSunken
+const afbRaised = 3    'afbRaised
+
+'tagTxPrintScale
+const poNone = 0    'poNone
+const poProportional = 1    'poProportional
+const poPrintToFit = 2    'poPrintToFit
+
+'tagTxMouseButton
+const mbLeft = 0    'mbLeft
+const mbRight = 1    'mbRight
+const mbMiddle = 2    'mbMiddle
+
+'tagEnumFileOptions
+const ffDefault = 0
+const ffOverwrite = 1
+const ffSetActive = 2
+
+'tagTxPropertyType
+const ptUnknown = 0
+const ptString = 1
+const ptSmallint = 2
+const ptInteger = 3
+const ptBoolean = 5
+const ptFloat = 6
+const ptCurrency = 7
+const ptDate = 9
+const ptTime = 10
+const ptDateTime = 11
+const ptBlob = 15
+const ptMemo = 16
+const ptVariant = 32
+const ptIDispatch = 34
+const ptModule = 35
+
+'tagTxSortType
+const stNone = 0
+const stDescending = 1
+const stAscending = 2
+const stUnsupported = 3
+
+'tagPropertyAccessType
+const paReadOnly = 0
+const paInsert = 1
+const paEdit = 2
+const paInsertEdit = 3
+
+'tagTFilterKind
+const fkEQ = 0    'Равно
+const fkNotEQ = 1    'Не равно
+const fkLess = 2    'Меньше
+const fkLessOrEQ = 3    'Меньше или равно
+const fkGreat = 4    'Больше
+const fkGreatOrEq = 5    'Больше или равно
+const fkBEETWEN = 6    'Диапазон
+const fkIN = 7    'Множество
+const fkSTARTING = 8    'Начинается
+const fkCONTAINING = 9    'Содержит
+const fkNull = 10    'Пустое
+const fkNotNull = 11    'Не пустое
+
+'tagTMEventsTypes
+const etDLBeforeScroll = 0
+const etDLScrolled = 1
+const etDLAfterApply = 2
+const etDLAfterOpen = 3
+const etDLAfterClose = 4
+const etDLAfterDelete = 5
+const etAppException = 6
+
+'tagEnumTMEventDataStructFlags
+const TMEventDataStructFlagsFlags = 1
+const TMEventDataStructFlagsValue1 = 2
+const TMEventDataStructFlagsV1 = 3
+const TMEventDataStructFlagsNext = 0
+
+'tagNmkClassType
+const ctOperation = 1    'Технологическая операция
+const ctPereshod = 2    'Технологический переход
+const ctMaterial = 3    'Основной материал
+const ctCompMaterial = 4    'Вспомагательный материал
+const ctTool = 5    'Инструмент
+const ctUser = 6    'Пользовательский
+const ctDocument = 7    'Документация
+const ctOborud = 8    'Оборудование
+const ctUnCeha = 9    'Расцеховка
+const ctTpp = 10    'Типовой технологический процесс
+const ctConstrMaterial = 11    'Конструкторский материал
+const ctComment = 12    'Комментарий
+const ctAll = -1    'Все типы классов
+
+'tagEnumDocSearchType
+const dspSearchDocByNote = 0    'Искать по обозначению документа
+const dspSearchDocByVerID = 1    'Искать по идентификатору версии документа
+const dspSearchDocByDocID = 2    'Искать по идентификатору документа
+const dspSearchDocByUnloadPath = 3    'Искать по имени папки, куда выгружен документ
+
+'tagEnumCreateDocParams
+const cdDefault = 0    'Использовать параметры по умолчанию
+const cdShowDialog = 1    'Показать диалог мастера создания документа
+const cdHideFilesDialog = 2    'Не показывать диалог добавления файлов к документу
+const cdUseDlgCaption = 4    'Установить свой заголовок мастеру создания документа
+const cdAutoGenerateNote = 8    'Автоматически генерировать обозначение документа
+
+'tagEnumCreateDocVerParams
+const cdvDefault = 0    'Использовать параметры по умолчанию
+const cdvShowDialog = 1    'Показать диалог мастера создания версии документа
+const cdvHideFilesDialog = 2    'Не показывать диалог добавления файлов
+const cdvUseDlgCaption = 4    'Установить свой заголовок мастеру создания версии документа
+const cdvMakeActive = 8    'Сделать новую версию документа активной
+const cdvBaseOnSourceDocVersion = 16    'Создать новую версию документа на основе существующей
+const cdvCopySourceWorkFlow = 32    'Скопировать способ обработки из исходной версии документа
+const cdvCopySourceState = 64    'Скопировать текущий статус исходной версии документа
+const cdvCopySourceParamList = 128    'Скопировать список атрибутов из исходной версии документа
+const cdvCopySourceParamValues = 256    'Скопировать значения атрибутов исходной версии документа
+const cdvCopySourceFiles = 512    'Скопировать файловый состав из исходной версии документа
+const cdvCopySourceLists = 1024    'Скопировать листы из исходной версии документа
+const cdvCopySourceSketches = 2048    'Скопировать эскизы из исходной версии документа
+const cdvCopySourceDocLinks = 4096    'Скопировать связи (применяемость) исходной версии документа
+
+'tagEnumCreateDocCopyParams
+const cdcDefault = 0    'Использовать параметры по умолчанию
+const cdcShowDialog = 1    'Показать диалог мастера копирования документа
+const cdcUseDlgCaption = 2    'Установить свой заголовок мастеру копирования документа
+const cdcHideFilesDialog = 4    'Не показывать диалог добавления файлов
+
+const tagEnumMessageFolders = "{00000000-0000-0000-0000-000000000000}"
+const EnumMessageFolders = "{901089BB-6CEC-431C-A491-681F39B78411}"
+const tagMultiUpdatePropOptions = "{00000000-0000-0000-0000-000000000000}"
+const MultiUpdatePropOptions = "{1283C5AE-82C1-4C26-BA47-A1E8AD1A51AF}"
+const tagEnumMyDocRights = "{00000000-0000-0000-0000-000000000000}"
+const EnumMyDocRights = "{5BFB3925-A890-4346-A495-81713780704E}"
+const tagEnumDocRightFlags = "{00000000-0000-0000-0000-000000000000}"
+const EnumDocRightFlags = "{904A70C8-A799-4F3A-9782-AE660811F3E1}"
+const tagEnumOpenDocCommands = "{00000000-0000-0000-0000-000000000000}"
+const EnumOpenDocCommands = "{B9655852-934D-4353-A3DD-7508FEB63D9E}"
+const tagEnumCreateDocStructFlags = "{00000000-0000-0000-0000-000000000000}"
+const EnumCreateDocStructFlags = "{66979C3C-7A1B-41D6-91D2-3D218E6900E5}"
+const tagEnumCreateSketchStruct = "{00000000-0000-0000-0000-000000000000}"
+const EnumCreateSketchStruct = "{ECAD29CF-39C0-48DC-B666-A2BEA4A488B1}"
+const tagTxActiveFormBorderStyle = "{00000000-0000-0000-0000-000000000000}"
+const TxActiveFormBorderStyle = "{39D63AFE-76E2-48C9-81D4-F7CD9AF5B465}"
+const tagTxPrintScale = "{00000000-0000-0000-0000-000000000000}"
+const TxPrintScale = "{F7040E26-95E3-4A6A-BD58-31F9C3660AD8}"
+const tagTxMouseButton = "{00000000-0000-0000-0000-000000000000}"
+const TxMouseButton = "{A0D1223B-5DBB-46EC-BF6C-23D57519B293}"
+const tagEnumFileOptions = "{00000000-0000-0000-0000-000000000000}"
+const EnumFileOptions = "{A384EE7B-0FE5-434F-9A06-F57F27B360B0}"
+const ICsdnAxFormEvents = "{54AB136C-2FD3-4E4B-AE15-99B13E7F8D6E}"
+const ICsdnAxForm = "{5B188088-8578-4508-829B-8A63EFB7DA1B}"
+const CsdnAxForm = "{0F4C922C-663E-487A-9CD1-C95719B2DEB2}"
+const IModule = "{2755B9F1-8464-4918-B7DC-CA48A6D01268}"
+const tagTxPropertyType = "{00000000-0000-0000-0000-000000000000}"
+const TxPropertyType = "{F7D26ABE-0B34-482A-928D-99CAFCB7FE27}"
+const tagTxSortType = "{00000000-0000-0000-0000-000000000000}"
+const TxSortType = "{FAB756F5-0458-4B20-A7D8-74E866F89A6D}"
+const tagPropertyAccessType = "{00000000-0000-0000-0000-000000000000}"
+const PropertyAccessType = "{4420E9DD-9684-44D1-BA7E-1A6DFD5C83D4}"
+const IProp = "{BD32C046-DD15-4FDF-87FE-6DDEFA290A3E}"
+const Prop = "{168924C1-4E72-45D3-991A-4E2D31583F74}"
+const IGModule2 = "{FF6F5A3F-F844-4143-9EA6-0B885D2082AF}"
+const IProp_ParType = "{6432F8FE-A0A3-4704-98D8-600930CE5240}"
+const Prop_ParType = "{B766F97C-7335-4104-BC37-8F8A7983ED4B}"
+const IProp2 = "{7E3B78B5-0B4F-4978-B7AC-407B28122300}"
+const tagTFilterKind = "{00000000-0000-0000-0000-000000000000}"
+const TFilterKind = "{C5E6AAAB-3587-40F9-90F2-9400D00BA7F1}"
+const IFilterItem = "{817BEB02-6257-49B4-ACAE-AC0E7869DEF4}"
+const FilterItem = "{A9B90476-2B6D-4208-8BDB-C7F0963F118D}"
+const IFilter = "{A8EBB3E1-DC2E-42EC-8B9F-BE52C8E35237}"
+const Filter = "{0342F7B0-B678-4BD0-9A26-BD0E00A3FFBB}"
+const IPropArray = "{5D50BB50-7E68-4682-85DE-04621F43599B}"
+const PropArray = "{AC6A5046-5BA2-4298-89FA-818A1243D741}"
+const tagTMEventsTypes = "{00000000-0000-0000-0000-000000000000}"
+const TMEventsTypes = "{612C0387-0757-44C8-A92A-4C493B34D6C6}"
+const tagEnumTMEventDataStructFlags = "{00000000-0000-0000-0000-000000000000}"
+const EnumTMEventDataStructFlags = "{F931B3AB-82B1-47C3-A67C-0C3B4C958E8D}"
+const tagTMEventData = "{00000000-0000-0000-0000-000000000000}"
+const TMEventData = "{A6104EEE-7BDD-4381-A179-5C83F009136C}"
+const IMEvents = "{4EE76FF2-60ED-4741-AE06-1B16F47BEE35}"
+const IPModule = "{673B57D4-3C41-4D9F-A5B0-D58029E9AAB3}"
+const IDbNode = "{EA3D034F-41A5-453D-AF3C-B228E58B7BAF}"
+const DbNode = "{EC01153B-F56C-4338-9AEB-3A4181233C83}"
+const IRootDbNodes = "{A9B6CE9F-ACC6-4E26-B462-AFF4B2A738FF}"
+const RootDbNodes = "{6247884A-8C45-424E-BE84-9271961A490B}"
+const IDbTree = "{5216A998-823C-456F-AAB1-4A5580CD590F}"
+const DbTree = "{0526DDB9-0BC9-4761-AE1E-CC7333F7C509}"
+const ISimpleTModule = "{CBEE8BAE-EBF5-4698-8BCE-4FCE8239785E}"
+const SimpleTModule = "{EDC2DC4E-FBF3-46E7-A265-95431AB116E1}"
+const IChildModules = "{4A3836AD-E3C0-41E1-8F99-B8730F59F53F}"
+const ChildModules = "{F102FC8F-CAF4-4131-96C8-4FB4BD0CACD1}"
+const ICSDNAction = "{F13E2522-F22B-4134-A0E9-607AC7F4A6BB}"
+const CSDNAction = "{40A0FF8F-E44F-428F-B857-3DA6D06F379D}"
+const ICSDNActions = "{1E7DFB07-4EC2-4BC7-AAAD-0AE47966F15E}"
+const CSDNActions = "{28A21792-80E5-4D75-8013-F6FD62F6E64B}"
+const IDModule = "{4B958C99-A88F-4710-AFA3-38E6D5D95F87}"
+const IDEvents = "{EFB31634-3FAE-4DEF-96EF-5BA5CBDA2D5B}"
+const DEvents = "{9007C01E-30D2-4634-ABBB-E767FC43DAC5}"
+const DModule = "{0333FB93-9DEC-4C70-882E-B86667CAAD52}"
+const IReports = "{242E55E9-BCEA-4382-89EC-628DCC6735E1}"
+const Reports = "{D05A2F56-9B66-4334-B073-770953BB73CF}"
+const IGModule = "{AAB64E9C-650D-4D3A-B9CC-E0F60C503E5F}"
+const GModule = "{2B6FE6BE-C897-416E-83DE-F335542A90D7}"
+const IUsedNMkVersions = "{2730C714-0161-40A8-AA51-80875299954C}"
+const UsedNMkVersions = "{53EBA223-1ABF-498C-ABB5-B15D77ABC9BC}"
+const ITModule = "{4DD23D4B-D0F0-4BC0-9692-492F275857E0}"
+const TModule = "{620B578C-6BAF-47AD-8C47-0AAB111B3314}"
+const IFileTypes = "{C9B7DBC0-AC61-4035-A961-B3B1DCBB0D8F}"
+const FileTypes = "{A364367B-4C63-46DD-B565-26A3F79EB3E3}"
+const IDocTypes = "{D8D9DFE7-FF9F-4C76-A507-E2C9DC196D85}"
+const DocTypes = "{56059F54-BD27-434E-AF69-A10F48DB4E4D}"
+const ISignTypes = "{FF5D5B74-59DE-402C-A842-0A58B5770713}"
+const SignTypes = "{AE98AC5E-DA22-429B-83A9-91E853031A64}"
+const IWorkFlowTypes = "{4CECBFB6-C64B-46C5-B0FB-ADD8733A01D5}"
+const WorkFlowTypes = "{5E909F2E-DA05-4435-B6E9-AA8DE6BEEECF}"
+const IDocStates = "{3C7886B3-DC3B-4176-A796-B0E1AC1D52D0}"
+const DocStates = "{BE145F2D-4EED-45A8-B08B-20BF79D92738}"
+const IDocuments = "{818D5FF3-2085-45C9-B49E-85B09DC8921F}"
+const Documents = "{BAA3D7C5-2FE3-4450-8C02-AD21DAD9C902}"
+const IMesuriments = "{06B407AC-0655-4B4A-9F05-9BED88D57FAC}"
+const Mesuriments = "{D44C989A-59E0-4A97-8CA7-C6C0F1F16E15}"
+const tagNmkClassType = "{00000000-0000-0000-0000-000000000000}"
+const NmkClassType = "{509BF651-A8DE-4F3F-813D-64B7C1D49528}"
+const INmkClasses = "{B9DEE2A7-E7B4-4608-A9E3-7450F116021E}"
+const NmkClasses = "{97931653-8B9C-47B6-8590-BF8D024AEC26}"
+const IFileTypeTemplates = "{756E7BAE-365F-415F-A28C-9D87A3BE79A7}"
+const IFileTypeTemplates2 = "{34C45ACB-08C6-4F10-BCFE-6D2CF721EDE5}"
+const FileTypeTemplates = "{0C984F66-9A7F-4B5F-9A09-A6F6A38D1E44}"
+const IFileTypeCommands = "{FDF3176A-B95A-4707-9129-751D0E088369}"
+const FileTypeCommands = "{8576504E-FA84-4BAC-8908-E18DF7128C3A}"
+const IDocFileTypes = "{A2E24530-2040-4469-BA8C-5D81C6185347}"
+const DocFileTypes = "{33D57989-C3B1-46AA-9268-F3547E672ACA}"
+const IDocWorkFlowTypes = "{C9F158DD-786C-4444-BD4C-DA7813177611}"
+const DocWorkFlowTypes = "{0A71738C-F6FF-472C-886A-C715F26A80E6}"
+const IMessages = "{445573CE-3642-4374-8FE4-C26918A90C5B}"
+const Messages = "{1CFD1C9D-E578-43B9-A89C-D6D2D8CD06E7}"
+const IOCS_Application6 = "{81A76251-4C50-4933-9977-FAACE01B81A6}"
+const IProp_MessageType = "{CBB8071C-8C91-4FA9-A34A-B85308546825}"
+const Prop_MessageType = "{681E9486-5BCB-4764-9FD7-37E409F18F0C}"
+const IProp_AttachmentType = "{BFA32FED-61A8-4A72-8BEE-6EC4A0BAA7C1}"
+const Prop_AttachmentType = "{2E942996-445C-4286-B67A-6D43206D75E6}"
+const IAttachments = "{BFCE8894-A0C7-4445-9E6D-755CFDC55606}"
+const Attachments = "{1E240AB5-7372-4240-B30D-486A48945357}"
+const IRecipients = "{E775CF4D-A2C0-4750-AA10-4FA63BE7AF17}"
+const Recipients = "{DBD36217-DD4C-4739-97FB-1E810A6B4679}"
+const IUsers = "{AC0DE3A3-D61B-4101-BA98-04D4E210CEFC}"
+const IUsers2 = "{EFBD8930-37D9-4F99-8CD4-00A96761B651}"
+const Users = "{E22412FC-5E49-487F-BCED-ED2C5834FF36}"
+const IRoles = "{CB397BEB-182C-43C2-90FA-99C7E15308B8}"
+const Roles = "{92BADFB1-8A05-4EED-B97F-B62A2A7F4FDB}"
+const IDocRights = "{3DFDA121-7E42-47EA-A55B-C08913C37948}"
+const DocRights = "{F65F7B0E-36AB-494B-88D1-AF0A4F922FF9}"
+const IUserWorkGroups = "{DB0D82E0-DD86-4B91-888A-1D674029F8D0}"
+const UserWorkGroups = "{B3A9B054-7E76-442C-BA96-8CA3FE230309}"
+const IDocParamValueList = "{02AE9E0F-E220-4881-99BC-2CC08F27A287}"
+const DocParamValueList = "{792E6C5F-BFEB-4C28-B1C7-1DD6438016E8}"
+const IMechanizationLevels = "{64C41997-9617-4202-ACE7-46CD262ACFFB}"
+const MechanizationLevels = "{CA60A7BB-6D01-4E7E-80A2-E9544BB98CA4}"
+const IProfessionCodes = "{98D8908B-EB39-492A-876D-B8FEF44CACEA}"
+const ProfessionCodes = "{5EC6C0B5-6AC1-4482-8C6F-F755D05DB4A1}"
+const IWorkConditions = "{F2719B27-DEA3-427D-8A83-2D8EE00A4289}"
+const WorkConditions = "{72B0C097-2051-49BB-821B-F2091EBF0B3C}"
+const IWorkKinds = "{913E8D75-884C-489C-AFBC-3C2386666539}"
+const WorkKinds = "{92142324-84C4-4105-82D1-6202B7B8A2EE}"
+const IWorkCategories = "{8AA8D1C9-51D5-478C-B573-2309746F3A42}"
+const WorkCategories = "{AD05B0A7-040D-4278-A880-46F1BB64C71E}"
+const IPlantDepartments = "{12CE449E-10C0-4672-BECD-E44A392A17F8}"
+const PlantDepartments = "{DEAB74A7-69B9-461A-880C-A2077EF30416}"
+const IParameters = "{66FD9859-164C-4400-B510-D35E0CC77DBF}"
+const Parameters = "{17FB2DB0-5BF2-4FAC-AC93-80E1E2DA5856}"
+const IDocVersions = "{A4D075C4-8807-4882-A9BA-95617542A55B}"
+const DocCommands = "{7EB2438A-B45B-4247-A6CC-DD0AA8D46739}"
+const DocVersions = "{40762D3F-42CB-4F92-A351-85E438D0AD5F}"
+const IArchive = "{2DCCFFCB-7939-44C8-B203-4C7C8845A225}"
+const ISingleDoc = "{BD4B622F-BDB5-47C6-AACF-9F925AF35B78}"
+const DocCommands2 = "{EFCA3C6E-5623-4ADE-983B-841D60C0C927}"
+const DocCommands3 = "{CB73C3C7-CF55-45B4-8DEA-88263536DF94}"
+const Archive = "{3E36444F-E6FF-4DF6-AF56-2981E8FC622D}"
+const INomenclatures = "{64840551-18BC-11D7-AE05-0080AD09FC1D}"
+const IAttachedParams = "{3ED1B392-6183-4C29-9ACF-C9407D96474E}"
+const Nomenclatures = "{64840554-18BC-11D7-AE05-0080AD09FC1D}"
+const IDocParams = "{DBB6B1C1-3E54-448E-B744-C83301AD58E1}"
+const DocParams = "{63F18621-5C6F-4A1F-92C6-01F487DA7851}"
+const IDocSigns = "{3CDA2778-7ACD-46C8-BB8F-78827672935D}"
+const DocSigns = "{27A9DFB9-FB7F-4796-A1BA-AFC01355AA3A}"
+const IDocParamValues = "{66A5BF6C-4DE3-4EE9-B7C5-11AC43AE71E5}"
+const DocParamValues = "{AFB1C206-E122-4763-91BC-B809CCE09B8F}"
+const IDocVerParamValues = "{9018EC43-B6C3-4D97-8B41-11DF8C054A1A}"
+const DocVerParamValues = "{D1409414-BCB4-4AB0-B785-1459E5349ED0}"
+const IDocLists = "{C6A6BDE7-8342-4BC4-AF99-28F94728DA73}"
+const DocLists = "{71132537-96BC-4D4E-BFAA-6E35F7BD454E}"
+const IParameterValues = "{976F9A58-DF13-4EC1-8CEF-06D15AED55F4}"
+const INmkParameters = "{7DED6DAC-DA1F-441E-BF6A-36752752F340}"
+const NmkParameters = "{D23F7BAB-E9BF-4507-B93F-D4F71B6BAF96}"
+const SingleDoc = "{7C2A8BDF-119D-4B10-88A5-EFE0A409C065}"
+const IFolders = "{2237A238-94D2-4185-8B4B-991FEA26CD45}"
+const IFolders2 = "{83F82971-76C1-4E0A-9F17-9744C9D1E120}"
+const Folders = "{088C8E60-BAFA-4385-98E5-5338F2D1741E}"
+const IDocListParamValues = "{761A7D26-4022-47EE-9B09-7ED9B6DA4083}"
+const DocListParamValues = "{05BECE8A-F6F8-4ED2-B69C-B84B5AAF51FD}"
+const IDocFiles = "{A5D7F043-3F6B-4BA3-9186-311EAF8A7C34}"
+const IDocFiles2 = "{C73843AC-FFC7-4B41-822A-9E107E26647C}"
+const IDocFiles3 = "{2C68B0BB-1369-4770-AA28-6B477A43ED93}"
+const DocFiles = "{937613A5-8EFF-4CEF-806D-7FB3D34AFC81}"
+const tagEnumDocSearchType = "{00000000-0000-0000-0000-000000000000}"
+const EnumDocSearchType = "{E2324C8E-29D9-4ED6-8BED-31707F008385}"
+const tagStructLoginInfo = "{00000000-0000-0000-0000-000000000000}"
+const StructLoginInfo = "{99F0370E-8349-445E-8BFE-EB6E86A0DCB6}"
+const IWorkGroups = "{8167E79F-6F90-4414-87E9-F677CC4F0B38}"
+const WorkGroups = "{D5E33CE5-4F11-4990-AB70-F137AE246144}"
+const IArchiveTree = "{0DF751E7-1F06-41D3-8B54-053906C3F114}"
+const ArchiveTree = "{CAC4C015-7987-47E8-8C7F-1215CDCF589F}"
+const IFoldersTree = "{0E08F771-AA0D-45D5-8A53-84E2106978E7}"
+const FoldersTree = "{85CC0FFC-A53F-4A41-A4C2-11C3D914FC7A}"
+const IChildDModule = "{72EE9042-A34F-4C72-960F-198772AFB31D}"
+const ChildDModule = "{E70E821A-C896-4003-9890-676016E129C3}"
+const IChildGModule = "{B9411356-3F5E-4839-80B0-C296CC403362}"
+const ChildGModule = "{39DD67CC-4751-4BF9-8C92-8992506F6DE3}"
+const IChildTModule = "{4CBA8CDC-EE9A-4B79-8D2D-4098E9781507}"
+const ChildTModule = "{78D2B8A4-C9B5-4513-9029-3E8EACEBF327}"
+const ParameterValues = "{A911062A-077F-4187-8BD1-A97710AA4127}"
+const tagCreateDocStruct = "{00000000-0000-0000-0000-000000000000}"
+const CreateDocStruct = "{18A7944A-FD81-4677-95FE-8C5EF0CC36FB}"
+const tagEnumCreateDocParams = "{00000000-0000-0000-0000-000000000000}"
+const EnumCreateDocParams = "{F0FCEC60-B749-4F33-929F-7436AA05E4D4}"
+const IDocTypeParams = "{2B839C8D-1E5D-4C07-8C51-005B0273158A}"
+const DocTypeParams = "{0CE0BBDA-B7A3-4678-AB1F-5E96C305851F}"
+const INmkVersion = "{33F721F0-07E7-430D-ADDD-F54A3ACE848B}"
+const INmkVersions = "{AC267FE4-2827-4EBD-8325-1C8F1AABDBD4}"
+const NMkVersions = "{C0B69BC1-F448-4CA2-849C-AA82E52BF911}"
+const NmkVersion = "{A77BA1B4-9B7F-4DDD-8E59-3BC1BE87AD68}"
+const IMasterDocs = "{93753B8E-9D1F-47AA-8CCD-4EBF6A3EEB5B}"
+const MasterDocs = "{9C883A46-6074-49DB-91E0-9D2EFA11FB4E}"
+const IScriptLog = "{E3406641-2000-4866-825E-07B2431BBA91}"
+const tagEnumCreateDocVerParams = "{00000000-0000-0000-0000-000000000000}"
+const EnumCreateDocVerParams = "{314EF451-5B17-4CA1-B6D3-A5F2200E463F}"
+const tagEnumCreateDocCopyParams = "{00000000-0000-0000-0000-000000000000}"
+const EnumCreateDocCopyParams = "{5078759E-0C1B-4FA0-BB33-DF9DFF613E38}"
+const IFilter2 = "{0AC46A21-FA0D-4A27-9B10-9D4675461C2B}"
+const IModule2 = "{CE2A6875-F5A5-4095-8FB6-5737FF7CF5B4}"
+const ISpecificationPackages = "{547F1D88-9039-46ED-98ED-98C54C9DBC1C}"
+const SpecificationPackages = "{395BA6CF-691E-45D7-B7C1-1E51EA1A8DC7}"
+const INomenclatureDocuments = "{05FB99B0-4D8C-4A80-8AE4-34D3EA6C6600}"
+const NomenclatureDocuments = "{47827EDC-3B08-4EC4-B8D8-C2B4F65D187C}"
+const IProp_VerState = "{9C1FEE8A-E595-49E0-9DA8-EE0A9E3CB808}"
+const Prop_VerState = "{485DBF0E-F8F9-4BBA-962C-2EA425DBFD36}"
+const IProp_VerType = "{BD9B27AE-51F2-4425-8B4E-293DEE2E9B07}"
+const Prop_VerType = "{369F2367-926C-431A-9B86-9D12E4B397D8}"
+const IActualWorkFlowItemSigns = "{22E50C4B-BB79-4B5A-9FAF-CFE01EC77E1C}"
+const IActualWorkFlowItemSigns2 = "{1464E502-3949-4BDC-B7BC-2538F848F41E}"
+const ActualWorkFlowItemSigns = "{8F41A891-44B3-4348-B55B-CBB611A5D6FA}"
+const IActualWorkFlowItems = "{107DCA5A-4C52-4BCB-AFF4-C3FF76B76841}"
+const ActualWorkFlowItems = "{ED08BC6F-6623-4A18-A6FA-043607810F98}"
+const IActualWorkFlowItemActs = "{EC395030-2E05-46FF-BFEA-00755C2CBF42}"
+const ActualWorkFlowItemActs = "{AF176562-B29C-418E-B7D4-37DBFD3A951F}"
+const IDocWorkFlowSigns = "{F4043DCF-9397-4C09-AE88-57E64A296DCB}"
+const DocWorkFlowSigns = "{DC8B3144-6C74-4A97-9174-576B87BC6067}"
+const IEquipmentLoading = "{780F5449-46C7-4FC2-AC30-6BDA1ECA873F}"
+const EquipmentLoading = "{6431008E-562C-411A-B5EC-00E79FFF873A}"
+const IOcs_Application = "{082E3922-DF64-4F4F-904F-E65A8238FB0F}"
+const IExceptionInfo = "{5C25E627-A235-4E54-AE81-EF74D7E3EEB6}"
+const IAppEvents = "{A2D669F0-4806-48FB-8ADC-7179D0DC7F4F}"
+const AppEvents = "{F6EC8DC5-78A5-48A4-92DF-84F8ECA86D95}"
+const IOCS_Application4 = "{8418D147-1D54-4EA2-9ACA-B83DF9892152}"
+const ILinkedDocs = "{F91BA483-C979-431B-9966-3F4B3E79F3B0}"
+const LinkedDocs = "{C068582D-E8E0-42A0-AAA1-4027DC023B6D}"
+const tagCreateSketchStruct = "{00000000-0000-0000-0000-000000000000}"
+const CreateSketchStruct = "{506D42DE-F353-4E4B-BEAB-3066DC52EB75}"
+const ISketches = "{15603075-4D09-498D-82C3-74182870A83B}"
+const ISketches2 = "{08360A80-B9BD-4BB0-BA38-D34F2E27730A}"
+const Sketches = "{09121BD6-56F4-4EB2-B093-C7C09A7AD6D3}"
+const INmkSpecification = "{A96423DA-6741-47F2-9A54-AADC039DEFFB}"
+const NmkSpecification = "{5A07435A-001D-427A-BBE8-3B0F64DAA3C7}"
+const IGroupNomenclatures = "{88A3040E-B6C9-4BA6-9D76-7CB52ACE90DD}"
+const GroupNomenclatures = "{9789576A-5B4C-43C8-A511-1EBAFEE7B15D}"
+const INmkTechnology = "{42E4A269-F7AD-4EA2-B979-5ABAC84ED420}"
+const NmkTechnology = "{D0ED9375-4DC2-451E-9F0C-C42FF097DDCF}"
+const ISingleNomenclature = "{50ED3993-6B86-46B9-899E-A59561B750FA}"
+const SingleNomenclature = "{790055E8-07EF-4F45-A4D7-342591EDDC2A}"
+const ITechnologySketches = "{EBCF8298-0F0E-4828-A27F-42B577D6DD19}"
+const TechnologySketches = "{17EDC987-2E40-4237-BE4D-23ED69018B51}"
+const IVersionHeaderItems = "{D1258D8C-A635-45DE-B898-860C634FA3A2}"
+const VersionHeaderItems = "{7005EF56-60E8-43BD-83DB-BD8BD2B0F532}"
+const ITcs_Application = "{2EDD470E-C02E-48A6-AF4C-B67BF8132FE2}"
+const IProp_TableType = "{2BFEE570-4B81-4DC0-9CBC-9BE08ACAB78A}"
+const Prop_TableType = "{76F547FA-099D-4032-A2C7-88822FA248BF}"
+const ITcs_Application3 = "{905341C0-8D41-4047-A24C-FFCFD1471AC9}"
+const IMachinery = "{FBFDC831-2E59-4C57-8879-7BB9C5843F12}"
+const Machinery = "{20C9A26B-31C0-42EF-A6E0-0719721C8B92}"
+const ITcs_Application4 = "{CA7600E8-BEF3-4FA2-A51A-417C636F8762}"
+const INmkItogSpecification = "{FFA03430-C197-48A1-A601-D7F7A56CA38C}"
+const NmkItogSpecification = "{B2071D9A-0307-4118-9CEE-817FE6F12D7C}"
+const ITcs_Application5 = "{CDA985ED-FD70-442A-8533-80E4E176FB7B}"
+const IOCS_Application5 = "{0F9C5684-4C97-4D37-B73B-AF8F92B3BB17}"
+const ITCS_Application6 = "{B0084406-735A-4F92-980D-F5F21FAB7E03}"
+const IOcs_Application2 = "{19F13147-CEE4-42E0-A6CD-3543E865552C}"
+const IOCS_Application3 = "{5947A7D9-A30A-47DB-AA0B-3DFF093B0C05}"
+const ICSDNStrings = "{4686A779-8FE7-4869-B638-D94AA201A375}"
+const IUserGModule = "{619E0B4D-BE8D-48F7-AC9B-7387D42A828B}"
+const IDocLinkTypes = "{7F849ED1-F686-4026-B527-037C99BD9358}"
+const DocLinkTypes = "{F00DBBB8-97E4-4499-95B6-47250B5DF457}"
+const IWorkFlowStdActs = "{8633993B-A07D-43BC-8CDA-26E2E09BB241}"
+const WorkFlowStdActs = "{2DFAC204-E05F-4493-8D25-45D01CF4F363}"
+const Ocs_Application = "{CDC2BA68-F974-4F63-B8F7-EB3F35FF73DA}"
+const IOpenDocs = "{EE3504FE-88DB-434A-9719-48CD3666079E}"
+const OpenDocs = "{D3002218-9BA3-454F-BF41-A62AB6CAF44E}"
+const IProjects = "{6932E243-3A64-438F-AE43-65C0A9583C0E}"
+const Projects = "{4B78AAFF-C600-4E32-A98A-6EA13145AB53}"
+const IProjectTaskRoles = "{2FA9681F-36B0-4238-8D87-9E65842024C5}"
+const ProjectTaskRoles = "{1686A252-FFCE-4A01-851B-31145C5B82F1}"
+const IProjectTaskStates = "{6B32C9C1-B25F-4CCD-A2AC-FFC84AEB3D9B}"
+const ProjectTaskStates = "{91D3D386-64DA-492A-8B92-CDF736A3C69A}"
+const IProjectTaskReportTypes = "{81BA5C2D-2F60-4F6C-BECC-18FED8A2CA04}"
+const ProjectTaskReportTypes = "{C39D1344-0724-49F7-A61C-F2493ED64AA3}"
+const ITcs_Application2 = "{F0255F3C-8760-414A-ADB6-2FA163426FF8}"
+const Tcs_Application = "{601BA2C9-74B7-4680-AD20-694319A6F300}"
+const IPackageList = "{4F1F7D94-2A46-431A-8878-D0AB24BDEF17}"
+const INmkClassificator = "{EAE34B94-3BE8-4867-96E8-710D976206A9}"
+const ITcs_Inventory = "{77E70F3F-0FFF-473E-955C-8BD029CA5D39}"
+const INomenclaturesBalance = "{5DF8C7B8-9402-4D24-A98A-069FD100A1B7}"
+const ICalculateDocumentTypes = "{A99633E0-25EB-4087-8FBF-B34AB7D3754B}"
+const ICalculateDocuments = "{4AF7B5E4-ABDF-494E-8F0F-0E75721D3C21}"
+const IBalanceDocumentTypes = "{B48474BF-9C10-4048-B2D8-3D4020F24F89}"
+const IBalanceDocuments = "{723F522B-0467-43C6-A09A-EFACE9904D82}"
+const ISingleCalculateDocument = "{2C4A07E9-D19C-431B-8EDB-6111BD3E69B1}"
+const ISingleBalanceDocument = "{5430CF7F-0895-4495-9DD0-2AA59CF5617F}"
+const IBalanceNmkCards = "{EC897DCB-0167-407C-890F-EEE5C2382627}"
+const IBalanceNmkCardClassificator = "{A9744457-8AED-4BCD-B54E-284DBB5CD330}"
+const INomenclatureBatchs = "{D5BAEA85-BEB8-4CE0-88AF-0CCEAE826A52}"
+const INomenclatureSerialNumbers = "{AD2549DE-1033-42A5-ADF0-0C7BB8A738CC}"
+const ISerialNumberStates = "{988D04F2-28F8-43A0-B176-5109B64E9F77}"
+const ISingleBalanceNmkCard = "{6758B7C7-C520-4240-BC04-512E0BB9D778}"
+const ISingleNomenclatureBatch = "{79BA2580-E6F0-4571-9554-3A7226845C44}"
+const ISingleNomenclatureSerialNumber = "{71E6D987-3866-438A-89A8-1D2F22584D3C}"
+const ITcs_Manufacturing = "{408499FF-C1A1-42D9-AD88-C2CFF4B20752}"
+const IManufacturingOrder = "{2B986727-1349-408C-ABEA-05A0346A4993}"
+const ISimpleNomenclaturesSearching = "{419724DD-FA94-4CEF-971F-AF4CAFD37E4D}"
+const IUserNomenclatureDesktop = "{0821B94D-2428-4E15-BCFA-3194A071E369}"
+const IUserNmkDesktopClassificator = "{4448322F-BCFA-448E-9181-61A59FEFFF77}"
+const ITCSNormTables = "{AE6711EE-40CC-4DFA-845A-5ED34CAEC002}"
+const IWorkMans = "{9E077375-5B76-48B1-A4BD-7DDF3BB86742}"
+const ICounterAgents = "{937E5DB0-F0A5-4B6B-8B68-F6B0AB742449}"
+const NmkClassificator = "{4BE902D2-CDBD-4D7C-8244-7D65882B59B8}"
+const PackageList = "{3EB02576-6FFC-42FB-9B92-A48FA1FFDBFB}"
+const INmkVersion2 = "{0BD5C2C5-CFF2-447C-8FF7-C80DA2D0BF1B}"
+const IPosLinkedDocuments = "{52C85099-B688-4B1E-8C60-19D9809509AF}"
+const PosLinkedDocuments = "{7C004E45-AD0E-4C02-8CF3-DE1CE42FEE34}"
+const CSDNStrings = "{3B18AA37-29F1-49BD-90CD-6C168AD012E1}"
+const UserGModule = "{E0BB06FF-AF1E-4396-A3C6-A9D6D88E4AB5}"
+const TCSNormTables = "{454A1276-2263-44F8-AFB7-46E9B8478DA2}"
+const IProp_KindOfTime = "{8534D849-67E1-4B7B-AC98-2467C65A9B6B}"
+const Prop_KindOfTime = "{5C7BD4E8-7B37-4C80-A71A-74E0C9F6F98A}"
+const IProp_TableParType = "{0BF41D20-AD3B-4277-AB82-68BD58479BDD}"
+const Prop_TableParType = "{DF588F68-15DD-4C8B-9805-2D271C72387D}"
+const IProp_TimeIn = "{52A0536B-2DF4-4276-8E6C-4C711178AC1B}"
+const Prop_TimeIn = "{3F0F4CD3-EBCD-454E-8953-C86AB20030DC}"
+const CalculateDocuments = "{98DE7972-1DA9-4867-9540-791D1D732F44}"
+const CalculateDocumentTypes = "{32D46004-BEAE-4450-A69B-B95A4241452C}"
+const NomenclaturesBalance = "{69194A96-D44D-49A3-AF53-4A2C573AFEA3}"
+const BalanceDocuments = "{4E095F83-5E9E-4C1A-BDB6-26042371CB84}"
+const BalanceDocumentTypes = "{7A637353-C4CD-4878-B4C1-AB324351412D}"
+const IProp_BalanceOperation = "{8BF3D536-067A-4803-8DF6-06337F4039E4}"
+const Prop_BalanceOperation = "{9427D2BF-8478-41CF-9B73-8DE835674295}"
+const IProp_PartnerType = "{7056CB3A-3369-49F6-B349-206E2A584117}"
+const Prop_PartnerType = "{5A40E504-CD6E-4068-96ED-8B43EAC751BB}"
+const BalanceNmkCards = "{2CA4200F-7FF1-4EF2-85E7-04D53C4C0AE2}"
+const BalanceNmkCardClassificator = "{1242C143-253B-46EF-94C2-F6A8DDAB089C}"
+const NomenclatureBatchs = "{6ACA2677-A8D9-4330-A2AC-D2F103B4B0C5}"
+const NomenclatureSerialNumbers = "{21E335DF-835F-4E6C-8AEB-42076FFD9EB4}"
+const SingleBalanceDocument = "{7B35134F-92FA-482D-B16F-BBCA316315F1}"
+const SingleCalculateDocument = "{19218F19-F091-4C75-BDEA-E3CDA789F197}"
+const SerialNumberStates = "{5866DF01-7842-4270-9A63-280A82D6FC6E}"
+const IBalanceNmkCardMove = "{0D9B8304-447A-4223-8960-74C9A686A308}"
+const BalanceNmkCardMove = "{898964CE-7542-4741-84A8-255F86CE01CA}"
+const IBalanceNmkCardTotal = "{40D7D2FD-4DE8-48D6-8FC6-9265BB57E2A5}"
+const BalanceNmkCardTotal = "{78595341-1818-4D9A-A1AF-4C3E751B53CC}"
+const SingleBalanceNmkCard = "{0B8D1D99-515A-46B9-ABAB-746BCDA32A4F}"
+const SingleNomenclatureBatch = "{16279F24-5FBA-4B55-94DC-A8946F89E926}"
+const SingleNomenclatureSerialNumber = "{EE46944F-4B6C-4E34-90CA-81D3C14B6380}"
+const IBalanceNmkCardsByPlantDepartment = "{2F6CC6E5-58B9-4807-A897-573800EDC326}"
+const BalanceNmkCardsByPlantDepartment = "{9B13C0BA-1B18-4084-979C-6883E3F59442}"
+const ITcs_Inventory2 = "{BA59B12D-1086-444F-B15D-53FD50350AD8}"
+const Tcs_Inventory = "{240C1EE4-6243-443C-BF12-986C1DFEDB12}"
+const ManufacturingOrder = "{A837D609-D49A-4D71-9271-4CD2C5905A60}"
+const IProp_ProductionBOMState = "{82D6BC65-F834-4D6B-BC67-3D650B3AA2C6}"
+const Prop_ProductionBOMState = "{20D3E1EA-ECC4-438D-9D89-A37BA7FB6C86}"
+const IProductionBOMList = "{102C5D84-F959-4104-935D-69BDA87F1D9E}"
+const ProductionBOMList = "{A00D5A30-0A4A-47E7-A334-7E34F95D8925}"
+const IProductionBOMStructure = "{F68D0FB8-2426-4E51-9892-DBDC166C0891}"
+const ProductionBOMStructure = "{19613FED-899B-4CE2-9D75-16D1A6B0F390}"
+const IProductionBOMProcessCollection = "{696FB861-884E-468A-A8A1-6E1064019369}"
+const ProductionBOMProcessCollection = "{8DBF21D6-7EFF-46AC-9C5B-455FEC364677}"
+const IProp_ProductionBatchState = "{86E21793-EAB8-4483-BFF8-7A4E0AFC6A2D}"
+const Prop_ProductionBatchState = "{F5F26993-9A41-41D0-8F44-38829982E518}"
+const IProductionPlan = "{CBFDF12C-52E2-4129-A78A-0B128BC28269}"
+const ProductionPlan = "{93B38826-7BAC-41C8-AEE9-B69B5A0E3174}"
+const ISpoliageTypes = "{A81AF6C4-6FE4-4B4C-9F66-6AC8C6FD02B8}"
+const SpoliageTypes = "{2CB96D8C-CE5E-47EB-9FFB-730EBBE19899}"
+const ISpoliageCauses = "{B21575E5-C39F-4691-9B53-651D54E960E2}"
+const SpoliageCauses = "{3D8546A5-492D-47F1-A808-3F72625F0BA4}"
+const ISingleProductionBatch = "{168BE460-6061-4432-AB94-F27F963A2521}"
+const SingleProductionBatch = "{850FF7AB-940D-4E83-A5AE-0B5B7F4686E1}"
+const IProductionBatch = "{F0D12429-DB71-4C1C-95C0-6437AE386951}"
+const ProductionBatch = "{577BBC83-17EA-44AC-84FA-0BA8A2E3DA35}"
+const IProductionBOMs = "{9FB80BCB-6CBE-49A7-85F5-5782BF16C372}"
+const IProductionBOMs2 = "{8B49C673-A4A8-4DE1-9313-BAA8B7E133B4}"
+const ProductionBOMs = "{DD6753C5-8498-4D07-A18D-0B346AB514DE}"
+const ISingleProductionBOM = "{E426FAB3-9BBB-4AB0-9EF4-18992F8BA6D5}"
+const SingleProductionBOM = "{00478351-C559-4DB3-B357-30C5B93C2F62}"
+const IFinishedProducts = "{F3079A95-CAB8-4A0C-B97C-C72AFE0D4673}"
+const FinishedProducts = "{A56D1572-B559-45BA-ABF0-1FAEADFFB254}"
+const IProductionBatchType = "{79265C73-6B73-4704-A890-9CA7730FF6CB}"
+const ProductionBatchType = "{2F79CD00-EAA2-4D4E-A30D-B121B524DF5E}"
+const ICalendar = "{BF845B5C-7062-4DE5-9391-027E6E42A41B}"
+const Calendar = "{C322D1C7-1A15-495B-BC5A-3EFC8B1647DA}"
+const ICalendarType = "{96317498-6C10-4E8D-9CD6-D309DF859F26}"
+const CalendarType = "{9DDD6B23-2836-4F00-9208-1BABB99CDFDA}"
+const ITcs_Manufacturing2 = "{2698B0F0-FF4A-42E5-BFDB-6313BBB39E21}"
+const ITcs_Manufacturing3 = "{150355F1-23C6-4912-A227-BD830A76E904}"
+const ITcs_Manufacturing4 = "{62AB66E0-FC0F-4C1B-8CE7-BDE1DE9AE277}"
+const Tcs_Manufacturing = "{5B815462-19F0-496C-B276-6184AFA9A5CD}"
+const ITCSNormTables2 = "{601F20DC-1BA9-42AF-A119-7D90E11CB63E}"
+const IDocWorkGroups = "{4B53CAEB-5249-456F-A30D-4DAAF51C4530}"
+const DocWorkGroups = "{8A611874-3392-4690-AD5A-0BA00BD4E4F0}"
+const IDocUsers = "{F240C10B-FFDD-4191-BC32-0D7C65E72057}"
+const DocUsers = "{3B3045FC-3B27-4966-8553-074E2D526F7D}"
+const IWorkFlowTypeSigns = "{BBF23AF1-DF4E-4039-8774-7A6F6A2E8CF4}"
+const WorkFlowTypeSigns = "{B0D6E73D-4452-476E-B4DD-C3B9742F2537}"
+const IProjectTasks = "{C6C32A67-8084-48E3-B06D-954DA6A12409}"
+const ProjectTasks = "{01252E2C-82C5-412D-820D-17B3754BDDBE}"
+const IProjectDiagram = "{457A03EE-DFC1-4A37-9C8B-B810E44F57B7}"
+const ProjectDiagram = "{B9A23B88-1DA5-4D3D-A2D8-9288CA4BE610}"
+const IProp_ProjectTaskObjectType = "{43748947-A1EA-4363-BFB0-7A665F7A221A}"
+const Prop_ProjectTaskObjectType = "{8DA8DA32-E2CB-4FA6-8975-0FE06EA9C9E7}"
+const SimpleNomenclaturesSearching = "{412E23C3-5444-43D2-8D87-CDAAC9F85C8D}"
+const UserNmkDesktopClassificator = "{005A469A-7B99-4538-A164-58415747DB60}"
+const UserNomenclatureDesktop = "{F76C5D24-205F-4ACA-8B57-DEC39E1757ED}"
+const CounterAgents = "{425EEF7C-86BD-4081-8B3F-BBDE195E8820}"
+const WorkMans = "{083CBACE-B7D5-4371-B9C2-95D6E151D2BE}"
+const IAppVersion = "{21B7B234-C1A9-4A00-9579-58BC37DA6216}"
+const AppVersion = "{E88C10F9-B651-465B-8EF3-7499AD72B552}"
+const IOCS = "{387C2030-0607-4ACA-83CB-601BE5BC7BD9}"
+const OCS = "{550DD185-8AE7-4C85-BBA2-892495CD0A2E}"
+const ITCS = "{268A4C26-9DB1-48E9-8B23-32CCC5657E76}"
+const TCS = "{E0399CF0-4E7F-437D-8E74-B65FF75AF63C}"
+const IColumn = "{F02ABCA5-5B31-451E-BC69-896E531200E3}"
+const Column = "{01931401-F5CB-466A-A96A-ED51BD6A2541}"
+const IColumns = "{ABE694A6-F4CE-44C6-A5F5-5102E93BCD7E}"
+const Columns = "{059805D5-AE3B-462D-A3C9-F6EFFB3D6C0D}"
+const ICsdnAxDbGrid = "{308A8195-8764-4C4B-8AC4-DCF311497A7B}"
+const ICsdnAxDbGridEvents = "{DD9148B8-0230-4AEC-A0C8-8278CA5EB320}"
+const CsdnAxDbGrid = "{4A7E28D8-DE75-428D-81EE-C74E2AA78CC2}"
+
+
+Sub FormMacro_zagruzka(TCSActiveModule)
+
+  path = "C:\TEMP"
+  Set Shell = CreateObject("Shell.Application") 
+
+  Set Folder = Shell.NameSpace(Path)
+      
+  for each c in Folder.items() 
+    
+    ' Запоминаем информацию о файле
+    FileSize = c.size 
+    FileName = c.name 
+    FilePath = c.path  
+     
+    if (right(FileName, 4)=".xls") then   
+
+      MsgBox FileName
+
+    end if
+  next
+
+  gelLastXls = MaxFileStr
+end sub
+
+Sub FormMacro_create_nmk(TCSActiveModule)
+
+  Set NmkRasceh = TCSApp.Nomenclatures(17) 'NMK_CLASSIF_TYPE_REF
+  '17 - ???
+  
+  Call NmkRasceh.CreateNew
+    NmkRasceh.Properties("NOTE").Value = Null
+    NmkRasceh.Properties("NAME").Value = "test12323123213"
+    NmkRasceh.Properties("NMK_CODE").Value = Null
+    NmkRasceh.Properties("NODE_ID").Value = 8317 'нода - ЗАГРУЗКА в СТД
+    NmkRasceh.Properties("MESUR_ID").Value = 0
+    NmkRasceh.Properties("ISNOT_USED").Value = Null
+  On Error Resume Next
+  Call NmkRasceh.SaveChanges 
+  Call NmkRasceh.CancelChanges
+ 
+  Set NmkRasceh = Nothing
+
+end sub
+
+Sub OnBrowseForFileOkClick( Form, ObjName )
+  If Form.c_FName.FileName="" Then
+     Call TCSApp.ShowErrorMessage( "Выберите файл!" )
+  Else  
+    Form.Close( 1 )
+  End If
+End Sub
+
+Function BrowseForFile2( StartPath, Caption, FileMask )
+   BrowseForFile2 = ""
+   Set Form = TCSApp.TCSForm( "", False )
+   Form.Width = 420
+   If Caption="" Then Caption = "Выберите файл:"
+   Form.Caption = Caption
+   Call Form.CreateControl( "TVBCSFilenameEdit", "FName", "" )    
+   Set C = Form.Controls( "FName" )
+   C.FileName = ""
+   C.Left = 5
+   C.Top = 5
+   C.Width = 380
+   
+   
+   If StartPath<>"" Then C.InitialDir = StartPath
+   If FileMask<>"" Then C.Filter = FileMask
+   Call Form.CreateControl( "TVBButton", "OkBtn", "" )    
+   Set B = Form.Controls( "OkBtn" )
+   B.Caption = "Выбрать"
+   B.Width = 120 
+   B.Left =  C.Left + C.Width - B.Width
+   B.Top = C.Top + C.Height + 10
+   Call Form.SetControlEvent( "OkBtn", "ObjectClick", "CSDN_Nomenclatures.OnBrowseForFileOkClick" )
+   Form.Width = 400 + 15
+   Form.Height = B.Top + B.Height + 40 
+   Form.ShowModal  
+   If Form.ModalResult=1 Then BrowseForFile2 = C.FileName   
+End Function
+
+Sub FormMacro_XLSTEST4(TCSActiveModule)
+
+  LogObject.ScriptTimeOut = 0
+
+  If TCSActiveModule.SelectedRowsCount =0 Then
+    Call TCSApp.ShowMessageBox("Ошибка", "Полностью выделите нужную позицию номенклатуры") 
+    Exit Sub
+  End If 
+    
+  If TCSActiveModule.SelectedRowsCount <>1 Then
+    Call TCSApp.ShowMessageBox("Ошибка", "Выделите только одну позицию номенклатуры") 
+    Exit Sub
+  End If 
+  
+
+ For a = 0 To TCSActiveModule.SelectedRowsCount - 1 
+    'TCSActiveModule.GotoSelectedRow( a )   
+    If TCSActiveModule.GotoSelectedRow( a ) Then 
+ 'INSTR_ID = TCSActiveModule.Properties("NMK_ID").AsInteger
+ 'Set Uzet_kart= TCSActiveModule.Properties("BalanceNmkCard").AsIDispatch 
+    End If
+ Next 
+  
+  
+  proe_file = BrowseForFile2( "C:\", "Выберите файл для загрузки", "Файлы proe|*.html" )
+
+if (proe_file<>"") then
+
+
+  If isEmpty(XLS) Then Set XLS = CreateObject("Excel.Application")
+  XLS.Visible = true
+  Set WBK = XLS.Workbooks.Add
+  Set SHEET = WBK.Worksheets(1)
+  
+  row=0
+  col=0
+  startLine = false
+  
+  Dim res()
+
+  Redim res(20,0)
+'------------------------------ 
+  Set objStream = CreateObject("ADODB.Stream")
+  
+  objStream.CharSet = "utf-8"
+  objStream.Type = 2
+  objStream.Open
+  objStream.LoadFromFile(proe_file)
+  objStream.LineSeparator = 10
+
+  Dim Params(0)
+  Dim ParamValues(0)
+  
+  row = row + 1
+  SHEET.Cells(row, 1).Value = "№ п/п"
+  SHEET.Cells(row, 2).Value = "Тип"
+  SHEET.Cells(row, 3).Value = "Количество"
+  SHEET.Cells(row, 4).Value = "Обозначение"
+  SHEET.Cells(row, 5).Value = "ОбозначениеEN"
+  SHEET.Cells(row, 6).Value = "Название"
+  SHEET.Cells(row, 7).Value = "Название_A"
+  SHEET.Cells(row, 8).Value = "Название_B"
+  SHEET.Cells(row, 9).Value = "Название_C"
+  SHEET.Cells(row, 10).Value = "Название_D"
+  SHEET.Cells(row, 11).Value = "Материал"
+  SHEET.Cells(row, 12).Value = "Материал_a"
+  SHEET.Cells(row, 13).Value = "Материал_b"
+  SHEET.Cells(row, 14).Value = "Код"
+  SHEET.Cells(row, 15).Value = "ID в TCS по обозначению"
+  SHEET.Cells(row, 16).Value = "Не исп"
+  SHEET.Cells(row, 17).Value = "NEW ID"
+  SHEET.Cells(row, 18).Value = "NEW_Имя"
+  SHEET.Cells(row, 30).Value = "Не грузить"
+  
+  nmk_name = ""
+  
+  log_name = ""
+  log_sp = ""
+  
+  file_eof = false
+  
+  Do Until (objStream.EOS and file_eof)
+    LineInFile = objStream.ReadText(-2)
+
+    if (instr(LineInFile, "Sub-Assembly") and instr(LineInFile, "contains:")) then
+      startLine = false
+      row = row + 1
+      
+      str = LineInFile
+      str = mid(str, instr(str,"Sub-Assembly")+13)
+      str = left(str, instr(str,"contains:") - 1)
+      
+      SHEET.Cells(row, 1).Value = "!NMK!" 
+      SHEET.Cells(row, 2).Value = "Входимая"
+      SHEET.Cells(row, 3).Value = trim(str)
+      
+      Set Nmk = TCSApp.SingleNmkFromUniquePar("ENG_NAME", trim(str))
+      if (Nmk Is Nothing) then
+        SHEET.Cells(row, 4).Value = -1
+      else
+        Nmk.UserModuleName = Nmk.UniqueUserModuleName
+        SHEET.Cells(row, 4).Value = nmk.Properties("ID").Value        
+        Call TCSapp.DeleteModuleByUserModuleName(Nmk.UserModuleName)
+        set Nmk = Nothing
+      end if
+      
+      log_name = trim(str)                                                                       
+      
+      'exit do 'временно !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+      
+   elseif (instr(LineInFile, "Assembly") and instr(LineInFile, "contains:")) then
+        startLine = false
+        row = row + 1
+        
+        str = LineInFile
+        str = mid(str, instr(str,"Assembly")+9)
+        str = left(str, instr(str,"contains:") - 1)
+        
+        SHEET.Cells(row, 1).Value = "!NMK!"  
+        SHEET.Cells(row, 2).Value = "Головная" 
+        SHEET.Cells(row, 3).Value = trim(str)
+        SHEET.Cells(row, 4).Value = TCSActiveModule.Properties("ID").Value
+        
+        log_name = trim(str)                                                           
+    elseif (instr(LineInFile, ">Summary of parts for assembly")) then
+
+        startLine = false
+        'exit do
+        file_eof = true    
+    end if
+    
+    if not file_eof then
+    
+    SHEET.Cells(row, 21) = "стадия 1-31" 
+   
+    if (instr(LineInFile, "addTableRow")) then
+      startLine = true
+      row = row + 1
+
+      col = 1
+ 
+    end if
+    
+       
+    if (startLine=true) then
+      
+      if (instr(LineInFile, "appendCellsToTableRow")) then
+        col = col + 1
+           
+        str = LineInFile
+        '('
+        str = mid(str, instr(str,"('")+2)
+        str = left(str, len(str)-2)
+        str = trim(str)
+        
+        if     (col=2) then ' ТИП
+        '  redim preserve res(Ubound(res, 1), Ubound(res, 2)+1)
+        '  res(0, Ubound(res, 2)-1) = str
+        elseif (col=3) then ' КОЛВО
+        '  res(1, Ubound(res, 2)-1) = str
+        elseif (col=4) then ' ОБОЗНАЧЕНИЕ
+          Call TCSApp.ShowProgressMessage(str, "Загрузка из HTML --> (" + log_name + ")")
+
+        elseif (col=7) then 
+        '  res(6, Ubound(res, 2)-1) = str                
+        elseif (col=8) then
+        '  res(7, Ubound(res, 2)-1) = str                
+        elseif (col=9) then
+        '  res(8, Ubound(res, 2)-1) = str                
+        elseif (col=10) then
+        '  res(9, Ubound(res, 2)-1) = str                
+        elseif (col=11) then
+        '  res(10, Ubound(res, 2)-1) = str                
+        elseif (col=12) then
+        '  res(11, Ubound(res, 2)-1) = str                
+        elseif (col=13) then
+        '  res(12, Ubound(res, 2)-1) = str   
+        '    
+        elseif (col=14) then
+          'поиск номенклатуры
+ 'if (SHEET.Cells(row, 2)="std") then
+          nmk_name = SHEET.Cells(row, 6).Value
+            
+          if ((SHEET.Cells(row, 7).Value<>"---")and(SHEET.Cells(row, 7).Value<>"")) then nmk_name = nmk_name + " " + SHEET.Cells(row, 7).Value
+          if ((SHEET.Cells(row, 8).Value<>"---")and(SHEET.Cells(row, 7).Value<>"")) then nmk_name = nmk_name + " " + SHEET.Cells(row, 8).Value
+          if ((SHEET.Cells(row, 9).Value<>"---")and(SHEET.Cells(row, 7).Value<>"")) then nmk_name = nmk_name + " " + SHEET.Cells(row, 9).Value
+
+          if ((SHEET.Cells(row, 4)="---")or(SHEET.Cells(row, 4)="")) then
+            'поиск по наименованию
+                        
+            SHEET.Cells(row, 15).Value = gelIdByName(trim(nmk_name))
+            if (SHEET.Cells(row, 15).Value=-1) then
+              SHEET.Cells(row, 15).Value = gelIdByNameNOTUSED(trim(nmk_name))
+              if (SHEET.Cells(row, 15).Value<>-1) then
+                SHEET.Cells(row, 16).Value = "AA"              
+              end if            
+            end if
+            if (SHEET.Cells(row, 15).Value<>-1) then
+                tid = SHEET.Cells(row, 15).Value
+                Set Nmk = TCSApp.SingleNmkFromId(tid)
+                Nmk.UserModuleName = Nmk.UniqueUserModuleName
+                SHEET.Cells(row, 26).Value = Nmk.Properties("NMK_CLASSIF_TYPE_REF").AsInteger
+                Call TCSapp.DeleteModuleByUserModuleName(Nmk.UserModuleName)
+                Set Nmk = Nothing            
+            end if  
+            
+          else
+            'поиск по обозначке
+         Set Nmk = TCSApp.SingleNmkFromNMkNote(SHEET.Cells(row, 4).Value)
+            if (Nmk Is Nothing) then
+              SHEET.Cells(row, 15).Value = -1
+            else
+              Nmk.UserModuleName = Nmk.UniqueUserModuleName
+              SHEET.Cells(row, 15).Value = Nmk.Properties("ID").AsString
+              SHEET.Cells(row, 26).Value = Nmk.Properties("NMK_CLASSIF_TYPE_REF").AsInteger
+              if (Nmk.Properties("ISNOT_USED").AsInteger<>0) then
+                SHEET.Cells(row, 16).Value = "AA"  
+              end if
+
+              Call TCSapp.DeleteModuleByUserModuleName(Nmk.UserModuleName)
+              Set Nmk = Nothing
+            end if
+          end if
+          
+          'задать параметр номенклатуры ENG_NAME
+          NMK_NOTE_ENG = ""
+          if ((SHEET.Cells(row, 5).Value<>"---")and(SHEET.Cells(row, 5).Value<>"***")) then
+            NMK_NOTE_ENG = SHEET.Cells(row, 5).Value
+          end if
+         
+          'задать параметр номенклатуры ENG_NAME
+          '  SHEET.Cells(row, 11).Value = "Материал"
+          '  SHEET.Cells(row, 12).Value = "Материал_a"
+          '  SHEET.Cells(row, 13).Value = "Материал_b"
+          NMK_MAT = ""
+          if (SHEET.Cells(row, 11).Value<>"---") then
+            NMK_MAT = SHEET.Cells(row, 11).Value
+            if (SHEET.Cells(row, 12).Value<>"---") then NMK_MAT = NMK_MAT + " " + SHEET.Cells(row, 12).Value
+            if (SHEET.Cells(row, 13).Value<>"---") then NMK_MAT = NMK_MAT + " " + SHEET.Cells(row, 13).Value
+          end if  
+          
+          
+          'если номенклатура не найдена, то создаем
+        
+          
+          if (SHEET.Cells(row, 15).Value=-1) then
+
+            nmk_type = -1
+            nmk_tree = -1
+            
+            if (SHEET.Cells(row, 2)="dtl") then
+              nmk_type = 5   ' ДЕ
+              nmk_tree = 8321 'нода - ЗАГРУЗКА в ДЕ  -- КМТ 8321 
+            elseif (SHEET.Cells(row, 2)="asm") then
+              nmk_type = 26   ' СБ
+              nmk_tree = 8322 'нода - ЗАГРУЗКА в СБ  -- КМТ 8322 
+            elseif (SHEET.Cells(row, 2)="std") then
+              nmk_type = 17   ' СТД
+              nmk_tree = 8317 'нода - ЗАГРУЗКА в СТД -- КМТ 8317 
+            elseif (SHEET.Cells(row, 2)="tok") then
+              nmk_type = 1032   ' покупные
+              nmk_tree = 8323 'нода - ЗАГРУЗКА в     -- КМТ 8323 
+            elseif (SHEET.Cells(row, 2)="val") then
+              nmk_type = 25   ' М
+              nmk_tree = 8324 'нода - ЗАГРУЗКА в     -- КМТ 8324 
+            elseif (SHEET.Cells(row, 2)="ps") then
+              nmk_type = 19   ' ДОК
+              nmk_tree = 8325 'нода - ЗАГРУЗКА в     -- КМТ 8325 
+            end if          
+          
+            if (nmk_type<>-1)and(nmk_tree<>-1) then
+            
+              Set NmkRasceh = TCSApp.Nomenclatures(nmk_type) 'NMK_CLASSIF_TYPE_REF
+              NmkRasceh.UserModuleName = NmkRasceh.UniqueUserModuleName
+     
+              Call NmkRasceh.CreateNew
+                if (SHEET.Cells(row, 4).Value="---") then
+                  NmkRasceh.Properties("NOTE").Value = Null
+                else
+                  NmkRasceh.Properties("NOTE").Value = trim(SHEET.Cells(row, 4).Value)
+                end if
+                NmkRasceh.Properties("NAME").Value = trim(nmk_name)
+                NmkRasceh.Properties("NMK_CODE").Value = Null
+                NmkRasceh.Properties("NODE_ID").Value = nmk_tree 'iiaa - CAA?OCEA
+                NmkRasceh.Properties("MESUR_ID").Value = 0
+                NmkRasceh.Properties("ISNOT_USED").Value = Null
+              On Error Resume Next
+              Call NmkRasceh.SaveChanges 
+              Call NmkRasceh.CancelChanges
+              
+              SHEET.Cells(row, 15).Value = NmkRasceh.Properties("ID").Value
+              SHEET.Cells(row, 17).Value = NmkRasceh.Properties("ID").Value
+              
+              SHEET.Cells(row, 18).Value = nmk_name
+              
+              SHEET.Cells(row, 26).Value = nmk_type
+              
+              call NmkRasceh.refresh
+             
+              Call TCSapp.DeleteModuleByUserModuleName(NmkRasceh.UserModuleName)
+              Set NmkRasceh = Nothing
+            end if
+            
+            if (SHEET.Cells(row, 15).Value>0) then
+              
+              if ((NMK_NOTE_ENG<>"---")and(NMK_NOTE_ENG<>"")) then
+                'i = setParamToNmk(SHEET.Cells(row, 15).Value, "ENG_NAME", NMK_NOTE_ENG)
+              end if
+              if ((NMK_MAT<>"---")and(NMK_MAT<>"")) then
+                'i = setParamToNmk(SHEET.Cells(row, 15).Value, "K_MAT", NMK_MAT)
+              end if
+              
+            end if            
+            
+            
+          end if
+        
+        end if
+
+        if (col=15) then
+          tNmkId = clng(SHEET.Cells(row, 15).Value)
+          tParName = cstr("ENG_NAME")
+          tParValue = cstr(SHEET.Cells(row, 5).Value)
+        
+          call setParamToNmk(tNmkId, tParName, tParValue)
+        end if
+        
+        if (col<15) then
+            SHEET.Cells(row, col).Value = trim(str)
+        end if
+        
+        if (col=19) then
+            'не грузить
+            SHEET.Cells(row, 30 ).Value = trim(str)
+            
+            if (trim(str)="n") then
+              SHEET.Cells(row, 15).Value = -1
+            end if
+        end if
+                
+        'msgbox str
+      end if    
+    end if
+    
+    end if 'file_eof
+
+  Loop
+  
+  objStream.Close 
+  
+  
+  'test = 1 / 0  
+  
+  'row = row + 2
+  
+  'проход по xls файлу и создание спецификаций
+  f = false ' признак того, что данную строку добавляем, как номенклатуру, в СП
+  i = 2
+  sp_nmk_id = 0
+  log_name = ""
+  Set Specif = nothing
+  Set Nmk = Nothing
+  Set NmkSpecVersions = nothing
+
+  Do while (i<=row)
+    'msgbox SHEET.Cells(i, 1).Value
+    SHEET.Cells(i, 23).Value = "стадия 2"
+    
+    'загрузка новой спецухи
+    if (SHEET.Cells(i, 1).Value="!NMK!") then
+      log_name = SHEET.Cells(i, 3).Value
+      if SHEET.Cells(i, 4).Value>0 then
+        'значит, что такая номенклатура есть - создаем у нее версию СП
+        SHEET.Cells(i, 23).Value = "стадия 2-1"
+        f = true
+              
+        sp_nmk_id = SHEET.Cells(i, 4).Value
+
+        'msgbox "создание СП для " + cstr(sp_nmk_id)
+             
+        If  Not Nmk Is Nothing Then
+          Nmk.UserModuleName = Nmk.UniqueUserModuleName
+	 	      Call TCSapp.DeleteModuleByUserModuleName(Nmk.UserModuleName)
+          Set Nmk = Nothing            
+        end if
+               
+        Set Nmk = TCSApp.SingleNmkFromId(sp_nmk_id)
+           
+        'если нет версий в статусе "редактирование" то создаем новую
+        
+        Set SqlCon = CreateObject("ADODB.Connection") 'Подключение к Access
+        SqlCon.Open "Provider=SQLOLEDB.1;Password=P@ssw0rd;Persist Security Info=True;User ID=1417;Initial Catalog=obuchenie2;Data Source=TECHCS\SQLEXPRESS" 
+        Set SQLCommand = CreateObject("ADODB.Command")
+        
+        SQLCommand.ActiveConnection = SqlCon 'указывается соединение
+        TextSQL = "select * " + _
+                  "from [VERSION] v1 " + _
+                  "where v1.NMK_ID = " + cstr(sp_nmk_id) + " and v1.VER_TYPE='S' and VER_STATE in (0, 3) " + _
+                  "order by v1.CHANGE_DATE desc "
+                  
+        SQLCommand.CommandText = TextSQL
+
+        Set RS = SQLCommand.Execute()
+        if RS.Eof then
+          SHEET.Cells(i, 23).Value = "стадия 2-3"
+          'если версий нет, то создаем новую
+          If  Not NmkSpecVersions Is Nothing Then
+            NmkSpecVersions.UserModuleName = NmkSpecVersions.UniqueUserModuleName
+  	 	      Call TCSapp.DeleteModuleByUserModuleName(NmkSpecVersions.UserModuleName)
+            Set NmkSpecVersions = Nothing            
+          end if      
+        
+        	Set NmkSpecVersions = TCSApp.NmkSpecificationVersions(sp_nmk_id) 
+          
+          'создание версии СП = newSpec_ver_id = ID_версии_СП
+          newSpec_ver_id = NmkSpecVersions.CreateNewVersion( "Версия ИЗ PROE" )
+          SHEET.Cells(i, 5).Value = newSpec_ver_id 
+              
+          'получить спецификацию
+          call NmkSpecVersions.refresh
+          Set Specif = TCSApp.NmkSpecification( nmk_id, newSpec_ver_id )  
+        else
+          SHEET.Cells(i, 23).Value = "стадия 2-4"                                  
+          'если версии есть, то берем активную, удаляем все из нее и загружаем все туда
+          RS.MoveFirst
+          newSpec_ver_id = RS.fields("ver_id").value
+          'для этого проверяем, есть ли доступ и если нет, то добавляем
+          User_Name = TCSApp.LoginUserName
+          User_Id = -1
+          Set U = TCSApp.Users 
+          If Not U.IsEmpty Then
+          	If U.Locate("NAME", User_Name, 0) Then
+          		User_Id = U.Properties("ID").asInteger
+          	end if
+          End If 
+          Set U = Nothing          
+          
+          
+          TextSQL = "declare @cnt integer; " + _
+                    "declare @ver_id integer; " + _
+                    "declare @u_id integer; " + _
+                    "set @ver_id = "+cstr(newSpec_ver_id)+"; " + _
+                    "set @u_id = "+cstr(User_Id)+"; " + _
+                    "select @cnt = COUNT(*) " + _
+                    "from USERS_VERSION " + _
+                    "where VER_ID = @ver_id and [USER_ID] = @u_id; " + _
+                    "if (@cnt=0) begin " + _
+                    "	insert into USERS_VERSION(ver_id, user_id, UV_ACCESS) values(@ver_id, @u_id, 31) " + _
+                    "end "
+                    
+          SQLCommand.CommandText = TextSQL
+                    
+          call SQLCommand.Execute()
+          
+          Set Specif = TCSApp.NmkSpecification( nmk_id, newSpec_ver_id )
+          Do While Not Specif.EOF
+            Call Specif.DeleteRecord( False )
+            Specif.Refresh   
+            ccnt = ccnt + 1      
+            Call TCSApp.ShowProgressMessage("", "Удаление старой СП ("+log_name+") "+CStr(ccnt)+" ")
+          Loop
+                        
+        end if
+
+
+      else
+        'иначе не грузим
+        SHEET.Cells(i, 23).Value = "стадия не грузим - не найдена НМК"
+        f = false        
+      end if
+    else
+      'обработка строки
+
+      'msgbox "обработка строки"
+      SHEET.Cells(i, 23).Value = "стадия 2-6"
+      
+      if (f=true) then
+  
+        'msgbox "(f=true)"
+
+        
+        SHEET.Cells(i, 23).Value = "стадия 2-7"
+        
+        Call TCSApp.ShowProgressMessage(cstr(SHEET.Cells(i, 4).Value) + " " + cstr(SHEET.Cells(i, 6).Value), "Добавление в СП ("+log_name+")")
+
+        
+        sp_class = -1
+        
+        if not(SHEET.Cells(i, 15).Value = -1) then
+        
+          if (SHEET.Cells(i, 2)="dtl") then
+            sp_class = 5   ' ДЕ
+          elseif (SHEET.Cells(i, 2)="asm") then
+            sp_class = 26   ' СБ
+          elseif (SHEET.Cells(i, 2)="std") then
+            sp_class = 17   'СТД
+          elseif (SHEET.Cells(i, 2)="tok") then
+            sp_class = 1032   ' покупные
+          elseif (SHEET.Cells(i, 2)="val") then
+            sp_class = 25   ' М
+          elseif (SHEET.Cells(i, 2)="ps") then
+            sp_class = 19   ' ДОК
+          end if          
+  
+          SHEET.Cells(i, 24) = "sp_class="+cstr(sp_class)+"; "
+          
+          if (clng(SHEET.Cells(i, 26).Value)<>clng(sp_class)) then
+            SHEET.Cells(i, 24) = SHEET.Cells(i, 24)+"; не совпадает класс!!!! позиция не загружена"
+          
+          else
+          
+            if (isnull(Specif)) then
+              SHEET.Cells(i, 25) = "NMK_ID="+cstr(SHEET.Cells(i, 15).Value)+" Specif IS NULL!!! "
+            else
+              SHEET.Cells(i, 25) = "NMK_ID="+cstr(SHEET.Cells(i, 15).Value)+"; "
+              Call Specif.CreateNew          
+              
+              Specif.Properties("ATTACH").Value = sp_class ' NI 't_nmk.Properties("NMK_CLASSIF_TYPE_REF").AsInteger ' 
+              Specif.Properties("NMK_ID").Value = SHEET.Cells(i, 15).Value
+              Specif.Properties("MESUR_ID").Value = null
+              Specif.Properties("QUANTITY").Value = SHEET.Cells(i, 3).Value
+          
+              Call Specif.SaveChanges  
+            end if
+          
+          end if  
+        
+        end if
+    
+      
+      end if
+      
+    end if
+  
+    i = i + 1    
+  loop
+   
+  Set SHEET = Nothing
+  Set WBK = Nothing
+  Set XLS = Nothing  
+
+  Call TCSApp.HideProgressMessage    
+  
+  msgbox "ok"
+  
+else
+  msgbox "Не выбран файл"
+end if
+  
+End Sub
+
+
+function setParamToNmk(NmkId, ParName, ParValue)
+  if (NmkId>0) then
+    Set Nmk = TCSApp.SingleNmkFromId(NmkId)
+    If  Not Nmk Is Nothing Then 
+    
+      call Nmk.refresh
+      Set Nmk_par=Nmk.Properties("Parameters").AsIDispatch
+      Nmk.UserModuleName = Nmk.UniqueUserModuleName
+      Nmk_par.UserModuleName = Nmk_par.UniqueUserModuleName
+      call Nmk_par.refresh
+                
+      if ((ParValue<>"")and(ParValue<>"---")) then
+        i = Nmk_par.SetParameterValueByParCode(ParName, ParValue, 0, true)
+      end if
+      
+      call Nmk_par.refresh
+                
+      Call TCSapp.DeleteModuleByUserModuleName(Nmk_par.UserModuleName)
+      Call TCSapp.DeleteModuleByUserModuleName(Nmk.UserModuleName)
+      Set Nmk_par = Nothing
+      Set Nmk = Nothing
+      
+    end if
+  end if
+  setParamToNmk = 0
+end function
+
+function gelIdByName(NmkName)
+  Dim Params(0)
+  Dim ParamValues(0)
+  Params(0) = "PVALUE"
+  ParamValues(0) = NmkName 
+  Set Query = TCSApp.UserRecordSet( "FindNmkLikeName", False, Params, ParamValues )
+ 
+  res = Query.Properties("Nomenclatures_ID").Value
+  set Query = Nothing
+
+  if (isnull(res)) then
+    res = -1
+  end if
+  
+  gelIdByName = res
+end function
+
+function gelIdByNameNOTUSED(NmkName)
+  Dim Params(0)
+  Dim ParamValues(0)
+  Params(0) = "PVALUE"
+  ParamValues(0) = NmkName 
+  Set Query = TCSApp.UserRecordSet( "FindNmkLikeNameWithNotUsed", False, Params, ParamValues )
+
+  res = Query.Properties("Nomenclatures_ID").Value
+  set Query = Nothing
+
+  if (not(isnull(res))) then
+    gelIdByNameNOTUSED = res
+  else
+    gelIdByNameNOTUSED = -1
+  end if  
+end function
+
+
+Sub FormMacro_VerSpecToArchive(TCSActiveModule)                'Подтвердить состав изделия
+
+    LogObject.ScriptTimeOut = 0
+
+    Call mdl_KM_SostavNMK.VerSpecToArchive(TCSActiveModule)
+
+End Sub
+
+
+
+
+
+Sub FormMacro_VerSpecToArchive(TCSActiveModule)                'Подтвердить состав изделия
+
+    LogObject.ScriptTimeOut = 0
+
+    Call mdl_KM_SostavNMK.VerSpecToArchive(TCSActiveModule)
+
+End Sub
+
+
+Sub FormMacro_SQLConnect(TCSActiveModule)                'SQLConnect
+
+  User_Name = TCSApp.LoginUserName
+  User_Id = -1
+  Set U = TCSApp.Users 
+  If Not U.IsEmpty Then
+  	If U.Locate("NAME", User_Name, 0) Then
+  		User_Id = U.Properties("ID").asInteger
+  	end if
+  End If 
+  Set U = Nothing
+
+
+  Set SqlCon = CreateObject("ADODB.Connection") 'Подключение к Access
+  SqlCon.Open "Provider=SQLOLEDB.1;Password=P@ssw0rd;Persist Security Info=True;User ID=1417;Initial Catalog=obuchenie2;Data Source=TECHCS\SQLEXPRESS" 
+  
+  Set SQLCommand = CreateObject("ADODB.Command")
+  
+  SQLCommand.ActiveConnection = SqlCon 'указывается соединение
+  
+  TextSQL_Access = "select * from [version] v1"
+  SQLCommand.CommandText = TextSQL_Access
+  SQLCommand.CommandTimeout = 700 'таймаут
+  Set AccessRS = SQLCommand.Execute()   
+  
+
+End Sub
+
+'имеет ли пользователь доступ на создание версии у данного документа
+function user_rights_to_doc(Doc)
+
+  access_granted = false
+  
+  'I = TCSApp.Roles.ShowModal("Справочник ""Роли""")
+  
+  'перебираем всех пользователей и ищем свой логин
+  Dim USERS
+  Set USERS = Doc.Properties("USERS").AsIDispatch
+  If  Not USERS Is Nothing Then 
+
+    Do While Not USERS.Eof
+      
+      'если попался я в правах
+      if (USERS.Properties("NAME").AsString=TCSApp.LoginUserName) then
+      
+        'перебираем справочник ролей
+        Dim Roles
+        set Roles = TCSApp.Roles
+        Call Roles.first
+        Do While Not Roles.Eof
+          'нашли свою роль
+          if (Roles.Properties("ID").AsInteger=USERS.Properties("OFFICER_ID").AsInteger) then
+
+            dim TEMPLATES
+            Set TEMPLATES = TCSApp.DocRights
+            Call TEMPLATES.first
+            Do While Not TEMPLATES.Eof
+              if (Roles.Properties("DOCRIGHT_ID").AsInteger=TEMPLATES.Properties("ID").AsInteger) then
+                if (TEMPLATES.Properties("EDIT_VERSIONS").asBoolean) then
+                  access_granted = true  
+                end if                                                      
+              end if
+            
+              Call TEMPLATES.Next
+            loop
+            
+          end if
+
+          Call Roles.Next
+        loop  
+          
+        Set Roles = Nothing      
+      end if
+
+      Call USERS.Next
+    Loop 
+
+
+  End If
+  Set USERS = Nothing
+
+  'перебираем группы
+  Dim DOC_WORKGROUPS
+  Set DOC_WORKGROUPS = Doc.Properties("WORKGROUPS").AsIDispatch
+  If  Not DOC_WORKGROUPS Is Nothing Then   
+    Do While Not DOC_WORKGROUPS.Eof
+    
+        'перебираем справочник ролей
+        Dim WorkGroups
+        set WorkGroups = TCSApp.WorkGroups
+        Call WorkGroups.first
+        Do While Not WorkGroups.Eof
+        
+          'DOC_WORKGROUPS - ID идентификатор рабочей группы
+          if (DOC_WORKGROUPS.Properties("ID").AsString = WorkGroups.Properties("ID").AsString) then
+              
+            Set USERS = WorkGroups.Properties("USERS").AsIDispatch
+            If  Not USERS Is Nothing Then 
+
+              Do While Not USERS.Eof
+                
+                'если попался я в правах
+                if (USERS.Properties("USER_NAME").AsString=TCSApp.LoginUserName) then
+                
+                  'перебираем справочник ролей
+                  set Roles = TCSApp.Roles
+                  Call Roles.first
+                  Do While Not Roles.Eof
+                    'нашли свою роль
+                    if (Roles.Properties("ID").AsString=USERS.Properties("OFFICER_ID").AsString) then
+          
+                      Set TEMPLATES = TCSApp.DocRights
+                      Call TEMPLATES.first
+                      Do While Not TEMPLATES.Eof
+                        if (Roles.Properties("DOCRIGHT_ID").AsInteger=TEMPLATES.Properties("ID").AsInteger) then
+                          if (TEMPLATES.Properties("EDIT_VERSIONS").asBoolean) then
+                            access_granted = true  
+                          end if                                                      
+                        end if
+                      
+                        Call TEMPLATES.Next
+                      loop
+                      
+                    end if
+          
+                    Call Roles.Next
+                  loop  
+                    
+                  Set Roles = Nothing      
+                end if
+          
+                Call USERS.Next
+              Loop 
+
+            End If
+            Set USERS = Nothing
+          
+          end if
+        
+          Call WorkGroups.Next
+        loop  
+          
+        Set WorkGroups = Nothing                 
+
+      Call DOC_WORKGROUPS.Next
+    Loop 
+  End If
+  Set DOC_WORKGROUPS = Nothing
+  
+  user_rights_to_doc = access_granted
+
+end function
+
+'"групповая загрузка чертежей".
+Function BrowseForFolder( StartPath, Caption )
+   BrowseForFolder = ""
+   Set objShell = CreateObject("Shell.Application")
+   If Caption="" Then Caption = "Выберите папку:"
+   Set objFolder = objShell.BrowseForFolder( 0, Caption, 0, StartPath) 
+   If Not objFolder Is Nothing Then
+    BrowseForFolder =  objFolder.Self.Path 
+   End If
+End Function
+
+Sub FormMacro_LOADPDFp2(TCSActiveModule) 'Групповая загрузка чертежей x2
+
+  LogObject.ScriptTimeOut = 0
+    
+  Dim UserGModule
+
+  Set UserGModule = TCSApp.CreateUserGModule( "MyModule" )
+  Call UserGModule.ClearProps
+  Call UserGModule.ClearScripCommands 
+  UserGModule.ReadOnlyUserMode = False
+  
+  Call UserGModule.AddProp( "ID", "ID", 3, False, True, 0 )
+  Call UserGModule.AddProp( "doc_note", "Обозначение документа", 3, False, True, 0 )
+  Call UserGModule.AddProp( "doc_name", "Наименование документа", 3, False, True, 0 )
+  Call UserGModule.AddProp( "doc_bool", "Док V", 3, False, True, 0 )
+  Call UserGModule.AddProp( "nmk_note", "Обозначение связанной НМК", 3, False, True, 0 )
+  Call UserGModule.AddProp( "nmk_name", "Наименование связанной НМК", 3, False, True, 0 )
+  Call UserGModule.AddProp( "nmk_bool", "НМК создана при публикации", 3, False, True, 0 )
+  Call UserGModule.AddProp( "file_bool", "Файл загружен", 3, False, True, 0 )
+  
+ 
+
+  Set Form = TCSApp.TCSForm( "LoadPDF_frm", False )
+  call LoadPDF_frm.LOADPDFp2(TCSActiveModule, UserGModule, Form)  
+
+End sub
+
+
+sub FormMacro_LOADPDF(TCSActiveModule) 'Групповая загрузка чертежей
+
+  Dim Params(0)
+  Dim ParamValues(0)
+  Params(0) = "PVALUE"
+  ParamValues(0) = TCSApp.LoginUserName
+  
+  Call  CSDN_Nomenclatures.Add_Users(TCSActiveModule,result)
+  
+  Call TcsApp.ShowMessageBox("Результат",result)
+ '' Exit Sub
+  Select Case result
+    Case 1031                   ' сектор дверей
+       treeID = 763
+    Case 1018                   ' сектор окон
+       treeID = 756
+    Case 1032                   ' сектор электрооборудования
+       treeID = 775
+  End Select
+  
+  
+  TCSApp.Archive.refresh
+'  TCSApp.Nomenclatures.refresh
+  
+
+  'Set Query = TCSApp.UserRecordSet("FindUserGroups", False, Params, ParamValues)
+  
+  'Set doc = TCSApp.SingleDoc(0, "ФКГП394.13.01.002")
+  
+  'access_granted = user_rights_to_doc(Doc)
+  'if (access_granted=true) then 
+  '  Call TcsApp.ShowMessageBox("user_rights_to_doc", "access granted")
+  'else
+  '  Call TcsApp.ShowMessageBox("user_rights_to_doc", "acces deny")
+  'end if 
+
+  'if (1=0) then
+  
+  str = ""
+  str2 = ""
+  
+  Dim UserGModule
+
+  Set UserGModule = TCSApp.CreateUserGModule( "MyModule" )
+  Call UserGModule.SaveChanges 
+  Call UserGModule.ClearProps
+  Call UserGModule.ClearScripCommands 
+  UserGModule.ReadOnlyUserMode = False
+  
+  Call UserGModule.AddProp( "DOC_ID", "DOC_ID", 3, True, True, 50 )
+  Call UserGModule.AddProp( "doc_note", "Обозначение документа", 1, True, True, 50 )     
+  Call UserGModule.AddProp( "doc_name", "Наименование документа", 1, True, True, 50 )
+  Call UserGModule.AddProp( "doc_bool", "Док Создан", 5, True, True, 50 )
+  Call UserGModule.AddProp( "NMK_ID", "NMK_ID", 3, True, True, 50 )
+  Call UserGModule.AddProp( "nmk_note", "Обозначение связанной НМК", 1, True, True, 50 )
+  Call UserGModule.AddProp( "nmk_name", "Наименование связанной НМК", 1, True, True, 50 )
+  Call UserGModule.AddProp( "nmk_bool", "НМК создана при публикации", 5, True, True, 50 )
+  Call UserGModule.AddProp( "file_bool", "Файл загружен", 5, True, True, 50 )  
+    
+  'Folder = BrowseForFolder( "", "Выберите папку с чертежами" )
+  Folder = "D:\Users\yunakov\Desktop\test\Новая папка"
+
+  Set fso = CreateObject("Scripting.FileSystemObject")
+
+ ' For Each oFile In fso.GetFolder("D:\Users\yunakov\Desktop\test\Новая папка").Files
+  For Each oFile In fso.GetFolder(Folder).Files
+  
+    Call UserGModule.CreateNew  
+        'UserGModule.Properties("ID").AsInteger = i
+        'UserGModule.Properties("IS_SELECTED").AsBoolean = False        
+        'UserGModule.Properties("NAME").AsString = Polzovat(i)
+        'UserGModule.Properties("Rol").AsString = Rol(i) 
+        'UserGModule.Properties("Arbeit_Group").AsString = Group(i) + " " + Group_Name(i)
+        'UserGModule.Properties("Group_ID").AsInteger = Group_Id(i)                               
+
+ 
+  
+    fName = UCase(oFile.Name)
+ '''   Call TcsApp.ShowMessageBox("Загружено", fName)
+    fNMK_NAME = fName
+    fNMK_NAME = Replace(fNMK_NAME, "FKGP_", "ФКГП")
+    fNMK_NAME = Replace(fNMK_NAME, "FKGP", "ФКГП")
+    fNMK_NAME = Replace(fNMK_NAME, "fkgp_", "ФКГП")
+    fNMK_NAME = Replace(fNMK_NAME, "fkgp", "ФКГП")
+    fNMK_NAME = Replace(fNMK_NAME, "-", ".")
+    fNMK_NAME = Replace(fNMK_NAME, "_sb", "СБ")
+    fNMK_NAME = Replace(fNMK_NAME, "_SB", "СБ")
+    fNMK_NAME = Replace(fNMK_NAME, "sb", "СБ")
+    fNMK_NAME = Replace(fNMK_NAME, "SB", "СБ")    
+ '''   Call TcsApp.ShowMessageBox("Загружено1", fNMK_NAME)
+ '''   Call TcsApp.ShowMessageBox("Загружено2", (mid(fnmk_name, len(fnmk_Name)-5, 6)))
+      If ((mid(fnmk_name, len(fnmk_Name)-5, 6) = "СБ.PDF")) Then
+        NMK_NAME = left(fNMK_NAME, len(fNMK_NAME)-6)
+      Else
+        NMK_NAME = left(fNMK_NAME, len(fNMK_NAME)-4)
+      End if
+      
+    '''  Call TcsApp.ShowMessageBox("Загружено3", fNMK_NAME)
+    '''  exit for 'отладочное - только один файо	   
+    
+    if ((mid(fname, len(fName)-3, 4) = ".PDF")) then
+      fNMK_NAME = left(fNMK_NAME, len(fNMK_NAME)-4)
+      str = str + fNMK_NAME + " "
+    
+      Call TCSApp.ShowProgressMessage(oFile.Name, fNMK_NAME)	    
+    
+      'поиск документа
+      'dspSearchDocByNote = 0,
+      Set doc = TCSApp.SingleDoc(0, fNMK_NAME)
+      doc_exist = false
+      
+      If Not doc Is Nothing Then
+        doc_exist = true      
+      end if
+                
+      'поиск номенклатуры    
+      Set nmk = TCSApp.SingleNMKFromNMKNote(NMK_NAME)
+      nmk_exist = false
+      
+      If Not nmk Is Nothing Then
+        nmk_exist = true      
+      end if
+      
+      
+
+      nmk_message = ""
+      if (nmk_exist) then
+        nmk_message="(nmk найдена id="+nmk.Properties("ID").asstring+")"
+        str = str + "(n"+nmk.Properties("ID").asstring+")"
+        UserGModule.Properties("nmk_bool").asboolean  = false
+        UserGModule.Properties("nmk_note").AsString = nmk.Properties("NOTE").asString 
+        UserGModule.Properties("nmk_name").AsString = nmk.Properties("NAME").asString 
+        UserGModule.Properties("NMK_ID").AsString = nmk.Properties("ID").asString 
+      else
+        nmk_message="(nmk не найдена)"
+        str = str + "(n-)"
+        UserGModule.Properties("nmk_bool").asboolean  = true
+        UserGModule.Properties("nmk_name").AsString = nmk.Properties("NMK_NAME").asString 
+      end if
+      
+      doc_message = ""
+      if (doc_exist) then
+        doc_message="(doc найдена id="+doc.Properties("ID").asstring+")"
+        str = str + "("+doc.Properties("ID").asstring+")"
+        UserGModule.Properties("DOC_ID").AsInteger = doc.Properties("ID").asInteger 'doc_note doc_name
+        UserGModule.Properties("doc_note").AsString = doc.Properties("NOTE").asString 
+        UserGModule.Properties("doc_name").AsString = doc.Properties("NAME").asString 
+        UserGModule.Properties("doc_bool").asboolean  = false
+      else
+        'doc_message="(doc не найдена)"
+        'str = str + "(d-)"
+        'создаем
+        UserGModule.Properties("doc_note").AsString = fNMK_NAME
+        UserGModule.Properties("doc_name").AsString = NMK.properties("NAME").AsString 
+        UserGModule.Properties("doc_bool").asboolean  = true        
+        
+        Set doc = tcsApp.CreateDoc(fNMK_NAME, NMK.properties("NAME").AsString, 32, treeID, 9, result, a, b)
+        str = str + "("+doc.Properties("ID").asstring+")"
+        str2 = str2 + "Документ " + doc.Properties("NOTE").asstring + doc.Properties("NAME").asstring + "создан "
+        Doc.Edit
+        '  set SD = Doc.CreateDocVer( 0, "Импорт "+cstr(now()), -1, "" ) 
+          Doc.Properties("VER_NAME").Value = "0"
+          Set Files = Doc.Properties("FILES").AsIDispatch
+          Call Files.AddFile(Folder + "\" + oFile.Name, -1)
+          str2 = str2 + "с файлом версии 0; "
+          
+          Set ndocs = nmk.Properties("NomenclatureDocuments").AsIDispatch
+          J = ndocs.LinkNomenclatureToDocument(doc.Properties("ID").AsInteger)
+        ''  Call TcsApp.ShowMessageBox("Загружено", nmk.properties("NAME").AsString)
+          str2 = str2 + "привязан к номенклатуре" + nmk.properties("NOTE").AsString
+        Doc.SaveChanges          
+        'Set Files = doc.Properties("FILES").AsIDispatch
+        'Call Files.AddFile("D:\Users\yunakov\Desktop\test" + "\" + oFile.Name, -1)
+      end if
+
+      'Call TcsApp.ShowMessageBox("Names", "fNames="+fName+ "; nmk_name="+ fNMK_NAME+nmk_message+doc_message)
+      str = str + chr(10)
+      str2 = str2 + chr(10)
+       Doc.Refresh
+      'создание версии
+      UserGModule.Properties("file_bool").asboolean  = false
+      if (doc_exist) then
+        access_granted = user_rights_to_doc(Doc)
+        if (access_granted=true) then 
+        Doc.Edit
+          set SD = Doc.CreateDocVer( 0, "Импорт "+cstr(now()), -1, "" ) 
+          str2 = str2 + "К документу " + doc.Properties("NOTE").asstring + doc.Properties("NAME").asstring + "загружен "
+          Set Files = SD.Properties("FILES").AsIDispatch
+          Call Files.AddFile(Folder + "\" + oFile.Name, -1)
+          str2 = str2 + "файл c версией "+ "Импорт "+cstr(now()) +"; "
+          UserGModule.Properties("file_bool").asboolean  = true
+          
+          Set ndocs = nmk.Properties("NomenclatureDocuments").AsIDispatch
+          J = ndocs.LinkNomenclatureToDocument(doc.Properties("ID").AsInteger)
+        str2 = str2 + "привязан к номенклатуре" + nmk.properties("NOTE").AsString  
+        Doc.SaveChanges            
+        end if
+        str2 = str2 + chr(10) 
+      end if
+      
+      Set nmk = nothing
+      Set doc = nothing
+    
+    end if
+    
+  '  exit for 'отладочное - только один файо
+
+    Call UserGModule.SaveChanges  
+  
+
+  Next
+  
+  Call TCSApp.HideProgressMessage
+  
+  'end if
+  
+  Call TcsApp.ShowMessageBox("Загружено", str)
+  Call TcsApp.ShowMessageBox("Результат", str2)
+  Set Form = TCSApp.TCSForm( "LoadPDF_frm", False )
+  call LoadPDF_frm.LOADPDFp2(TCSActiveModule, UserGModule, Form) 
+
+End Sub
+
+Sub Add_Users(TCSActiveModule,result)
+ '  Dim nmk
+   Dim UsrGm
+   
+   Dim Polzovat(50), Rol(50), Group(50), Group_Name(50), Group_Id(50)
+   
+  Current_User = TCSApp.LoginUserName
+
+Set Workgroup = TCSApp.WorkGroups
+k = 0
+
+ Workgroup.First
+ 
+ Do While NOT Workgroup.EOF
+  
+   Set Users_Workgroup = Workgroup.Properties("USERS").AsIDispatch
+     Users_Workgroup.First
+      Do While Not Users_Workgroup.EOF
+        If (Users_Workgroup.Properties("USER_NAME").AsString = Current_User) and (Users_Workgroup.Properties("OFFICER_NAME").AsString = "Разработчик") Then
+           Polzovat(k) = Users_Workgroup.Properties("USER_NAME").AsString
+           Rol(k) = Users_Workgroup.Properties("OFFICER_NAME").AsString
+           Group(k) = Workgroup.Properties("NOTE").DisplayText
+           Group_Name(k) = Workgroup.Properties("NAME").DisplayText
+           Group_Id(k) = Workgroup.Properties("ID").AsInteger
+           k= k + 1
+        End if
+      Users_Workgroup.Next
+      Loop
+ Workgroup.Next
+ Loop 
+  If k = 1 then
+     result = Group_Id(0)
+  Else
+  If k = 0 Then
+     Call TcsApp.ShowMessageBox("Группы", "Вы не состоите ни в одной из групп")
+     result = 0
+  Else
+      Set UsrGm = TCSApp.CreateUserGModule( "MyModule" )
+      Call UsrGm.SaveChanges  
+   Call UsrGm.ClearProps
+   Call UsrGm.ClearScripCommands
+   UsrGm.ReadOnlyUserMode = False
+   Call UsrGm.AddProp( "ID", "Идентификатор", 3, False, True, 0 )
+   Call UsrGm.AddProp( "IS_SELECTED", "Добавить", 5, True, False, 50 )
+   Call UsrGm.AddProp( "NAME", "Наименование", 1, True, True, 250 )
+   Call UsrGm.AddProp( "Rol", "Роль", 1, True, True, 250 )
+   Call UsrGm.AddProp( "Arbeit_Group", "Рабочая группа", 1, True, True, 250 )
+   Call UsrGm.AddProp( "Group_ID", "ID группы", 3, False, True, 0 )
+   
+     For i = 0 To (k-1)                           
+        Call UsrGm.CreateNew  
+        UsrGm.Properties("ID").AsInteger = i
+        UsrGm.Properties("IS_SELECTED").AsBoolean = False        
+        UsrGm.Properties("NAME").AsString = Polzovat(i)
+        UsrGm.Properties("Rol").AsString = Rol(i) 
+        UsrGm.Properties("Arbeit_Group").AsString = Group(i) + " " + Group_Name(i)
+        UsrGm.Properties("Group_ID").AsInteger = Group_Id(i)                               
+
+ 
+        Call UsrGm.SaveChanges
+
+    Next   
+     
+
+    Id = UsrGm.ShowModal("Рабочие группы пользователя")
+
+   UsrGm.First
+   Do While Not UsrGm.Eof
+    If Not UsrGm.Properties("IS_SELECTED").AsBoolean = False Then
+       Rab_Group = UsrGm.Properties("Group_ID").AsInteger
+    END if
+   
+   UsrGm.Next
+   Loop
+   result = Rab_Group
+   End if
+   End if
+   
+   
+    
+End Sub
+
+
+Sub FormMacro_TrudPoperNormNMK2(TCSActiveModule) 'Трудовое пооперационное нормирование   
+
+
+End Sub	
